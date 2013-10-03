@@ -1,3 +1,6 @@
+# Ignore data CSV's
+*.csv
+
 *.py[cod]
 
 # C extensions
