@@ -20,7 +20,7 @@ for x in xrange(width):
   temp = ""
   for y in xrange(height):
     # Simple periodic data
-    val = math.sin(y/(2 * math.pi))*math.cos(x/(2 * math.pi) + 1
+    val = math.sin(y/(2 * math.pi))*math.cos(x/(2 * math.pi)) + 1
     if(temp == ""):
       temp = str(val)
     else:
