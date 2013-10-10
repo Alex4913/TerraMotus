@@ -9,6 +9,8 @@ sys.path.append(sys.path[0] + '/src/tools')
 import convert
 
 class thread(threading.Thread):
+  FPS = 30.0
+
   # Variable to store depth data.
   depthData = None
 
@@ -44,7 +46,7 @@ class thread(threading.Thread):
       contact.setBounce(0.2)
   
       # Friction
-      contact.setMu(50000000)
+      contact.setMu(5000)
   
       # Create a joint between them to repel
       joint = ode.ContactJoint(world, contactGroup, contact)
@@ -90,15 +92,12 @@ class thread(threading.Thread):
 
   def run(self):
     self.initODE()
-    simTimeStep = 0.00005
-
-    (body, geom) = self.createSphere(self.world, self.collisionSpace, 20, 5, 10, 1, 1)
-    self.bodies = [body]
-    self.geoms = [geom]
+    simTimeStep = 1.0 / self.FPS
 
     exit = False
     while(not(exit)):
       self.collisionSpace.collide((self.world, self.contacts),
                                     self.near_callback)
       self.world.step(simTimeStep)
+      time.sleep(simTimeStep)
       self.contacts.empty()
