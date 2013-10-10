@@ -15,6 +15,38 @@ def getMin(data, startVal):
 
   return result
 
+def sampleData(data, sampleStep):
+  rows = len(data)
+  cols = len(data[0])
+
+  returnData = []
+  for row in xrange(0, rows, sampleStep):
+    temp = []
+    for col in xrange(0, cols, sampleStep):
+      temp += data[row][col]
+    returnData += temp
+
+  return returnData
+
+def averageData(data, stepSize):
+  rows = len(data)
+  cols = len(data[0])
+
+  returnData = []
+  for row in xrange(stepSize, rows, stepSize):
+    temp = []
+    for col in xrange(stepSize, cols, stepSize):
+      sumOfArea = 0
+      for subRow in xrange(row, row - stepSize, -1):
+        for subCol in xrange(col, col - stepSize, -1):
+          sumOfArea += data[subRow][subCol]
+
+      temp += [float(sumOfArea) / (stepSize ** 2)]
+
+  returnData += temp
+
+  return returnData
+
 def getErrorLocations(data, errorVal):
   (rows, cols) = (len(data), len(data[0]))
 

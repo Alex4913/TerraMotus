@@ -44,7 +44,7 @@ class thread(threading.Thread):
       contact.setBounce(0.2)
   
       # Friction
-      contact.setMu(5000)
+      contact.setMu(50000000)
   
       # Create a joint between them to repel
       joint = ode.ContactJoint(world, contactGroup, contact)
@@ -90,9 +90,9 @@ class thread(threading.Thread):
 
   def run(self):
     self.initODE()
-    simTimeStep = 0.000001
+    simTimeStep = 0.00005
 
-    (body, geom) = self.createSphere(self.world, self.collisionSpace, 5, 5, 6, 1, 1)
+    (body, geom) = self.createSphere(self.world, self.collisionSpace, 20, 5, 10, 1, 1)
     self.bodies = [body]
     self.geoms = [geom]
 
