@@ -11,7 +11,7 @@ This project uses Python 2.7.3 with a few external dependencies:
 * [libfreenect](https://github.com/OpenKinect/libfreenect)
 * [PyOpenGL 3.x](http://pyopengl.sourceforge.net/)
 * [PyODE 1.2.x](http://pyode.sourceforge.net/)
-* [NumPy](http://www.numpy.org/)
+* [NumPy ](http://www.numpy.org/)
 
 ## The Meat
 This program melds a physics engine with real-time depth data collected by a
@@ -44,10 +44,13 @@ showing a rendered sandbox on the screen.
 Initially, I took the simple approach to draw triangles between adjacent points,
 yielding a total of 612,162 triangles to draw for the entire surface, as between
 a "box" of points, that is a grouping of four adjasent data-points, there were
-two triangles drawn.
+two triangles drawn. Shown below:
 
-Clearly, this was not the way to approach it. This made the program unusable as
-there were over half a million triangles drawn every refresh of the environment.
+![Initial Approach](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-squares.png?raw=true)!
+
+This gave incredible fidelity to the terrain, but clearly, this was not the way
+to approach drawing the environment. This made the program unusable as there 
+were over half a million triangles drawn every frame.
 
 #### Combating (OpenG)Lethargy
 What followed this was to apply a few filters to the depth data. The following
@@ -55,16 +58,21 @@ illustrate various optimization strategies. There is a pattern in these
 approaches: I did not want to sacrifice fidelity in the terrain in order to draw
 faster, but rather find more optimal ways to draw the data I have.
 
-*Sampling*: One method to make the data more manageable was to "sample" the data
-at a regular interval. While this would make drawing faster, this sacrifices
+*Sampling*:
+
+One method to make the data more manageable was to "sample" the data at a 
+regular interval. While this would make drawing faster, this sacrifices
 fidelity in the terrain.
 
-*Nearest-Neighbor Interpolation*: Another method was to average the depth data,
-almost like re-sizing a photo. This would make the depth feild smaller, but it
-would keep a more accurate representation of the reduced data. Again, this would
-lead to a loss in fidelity.
+*Nearest-Neighbor Interpolation*:
 
-*Triangle Strips*
+Another method was to average the depth data, almost like re-sizing a photo. 
+This would make the depth feild smaller, but it would keep a more accurate 
+representation of the reduced data. Again, this would lead to a loss in 
+fidelity.
+
+*Triangle Strips*:
+
 Instead of drawing two trinagles per block, draw only one, by combining
 neighboring triangles. This take advantage of OpenGL's Triangle Stip drawing
 method, considered to be the fastest way to draw triangles.
@@ -72,7 +80,7 @@ It follows this example:
 
 ![Triangle Strips](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-strip.png?raw=true)
 
-However, this leaves gaps in the drawing, however it significantly reduces the
+However, this leaves gaps in the drawing, but it significantly reduces the
 number of triangles drawn.
 
 *Grouping Near-Parallel Planes*
