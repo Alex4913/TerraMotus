@@ -70,7 +70,7 @@ neighboring triangles. This take advantage of OpenGL's Triangle Stip drawing
 method, considered to be the fastest way to draw triangles.
 It follows this example:
 
-->![Triangle Strips](https://github.com/Alex4913/TerraMotus/media/images/tri-strip.png)<-
+![Triangle Strips](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-strip.png?raw=true)
 
 However, this leaves gaps in the drawing, however it significantly reduces the
 number of triangles drawn.
