@@ -11,7 +11,7 @@ This project uses Python 2.7.3 with a few external dependencies:
 * [libfreenect](https://github.com/OpenKinect/libfreenect)
 * [PyOpenGL 3.x](http://pyopengl.sourceforge.net/)
 * [PyODE 1.2.x](http://pyode.sourceforge.net/)
-* [NumPy ](http://www.numpy.org/)
+* [NumPy](http://www.numpy.org/)
 
 ## The Meat
 This program melds a physics engine with real-time depth data collected by a
@@ -46,7 +46,7 @@ yielding a total of 612,162 triangles to draw for the entire surface, as between
 a "box" of points, that is a grouping of four adjasent data-points, there were
 two triangles drawn. Shown below:
 
-![Initial Approach](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-squares.png?raw=true)!
+![Initial Approach](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-boxes.png?raw=true)!
 
 This gave incredible fidelity to the terrain, but clearly, this was not the way
 to approach drawing the environment. This made the program unusable as there 
