@@ -46,7 +46,7 @@ yielding a total of 612,162 triangles to draw for the entire surface, as between
 a "box" of points, that is a grouping of four adjasent data-points, there were
 two triangles drawn. Shown below:
 
-![Initial Approach](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-boxes.png?raw=true)!
+![Initial Approach](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-boxes.png?raw=true)
 
 This gave incredible fidelity to the terrain, but clearly, this was not the way
 to approach drawing the environment. This made the program unusable as there 
@@ -96,4 +96,6 @@ in the terrain is lost.
 
 This algorithm first finds triangles with similar normal vectors, ensuring that
 they are adjacent, then it finds the best way to fill that area with triangles,
-minimizing the number drawn. 
+minimizing the number drawn. An example shown below:
+
+![Efficiency!](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-big.png?raw=true)
