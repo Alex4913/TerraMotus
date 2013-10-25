@@ -1,24 +1,28 @@
-def tryAssign(data, row, col, defaultVal):
-  try:
-    return data[row][col]
-  except:
-    return defaultVal
+from src.tools import plane
 
-def getNeighbors(data, row, col):
-  defaultVal = None
+def getNeighbor(point, (dx, dy), dataPlane):
+  point.x = point.x + dx
+  point.y = point.y + dy
 
-  # Return (North, East, South, West)
-  return (tryAssign(data, row - 1, col, defaultVal),
-          tryAssign(data, row, col + 1, defaultVal),
-          tryAssign(data, row + 1, col, defaultVal),
-          tryAssign(data, row, col - 1, defaultVal))
+  if((point.x < 0 or point.x >= dataPlane.width) or
+       (point.y < 0 or point.y >= dataPlane.height))
+    return None
+  else:
+    return dataPlane.getPoint(point.y, point.x)
 
-def isSimilarToNeighbors(data, row, col, radix):
-  neigbors = getNeighbors(data, row, col)
+def getNeighbors(point, dataPlane):
+  ptUp    = getNeighbor(point, ( 0, -1), dataPlane)
+  ptDown  = getNeighbor(point, ( 0,  1), dataPlane)
+  ptLeft  = getNeighbor(point, (-1,  0), dataPlane)
+  ptRight = getNeighbor(point, ( 1,  0), dataPlane)
+
+  return (ptUp, ptRight, ptDown, ptLeft)
+
+def isSimilarToNeighbors(point, dataPlane):
+  neigbors = getNeighbors(point, dataPlane)
 
   for neighbor in neighbors:
-    if(neigbor is not None):
-      if(abs(neighbor - data[row][col]) > radix):
-        return False
+    if((neigbor is not None) and (abs(neighbor.z - point.z) > radix)):
+      return False
 
   return True
