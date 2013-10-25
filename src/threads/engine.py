@@ -4,12 +4,11 @@ import Queue
 import ode
 import time
 
-import sys
-sys.path.append(sys.path[0] + '/src/tools')
-import convert
+import src.tools.convert as convert
 
 class thread(threading.Thread):
   FPS = 30.0
+  self.exit = False
 
   # Variable to store depth data.
   depthData = None
@@ -99,10 +98,14 @@ class thread(threading.Thread):
     self.bodies = [body]
     self.geoms = [geom]
 
-    exit = False
-    while(not(exit)):
+    while(not(self.exit)):
       self.collisionSpace.collide((self.world, self.contacts),
                                     self.near_callback)
       self.world.step(simTimeStep)
       time.sleep(simTimeStep)
       self.contacts.empty()
+
+    print "Physics Engine Stopped"
+
+  def stop(self):
+    self.exit = True
