@@ -4,7 +4,7 @@
 _TerraMotus_ is a bridge between the tangible, malleable world and the infinite
 realm of computer simulation. The aim is to give the user a unique experience,
 in that they can terraform a simulated world in real-time using a physical,
-malleable input device: a physical sandbox read by a Microsoft Kinect.
+malleable input device: a sandbox read by a Microsoft Kinect.
 
 ## Project Requirements
 This project uses Python 2.7.3 with a few external dependencies:
@@ -58,20 +58,20 @@ illustrate various optimization strategies. There is a pattern in these
 approaches: I did not want to sacrifice fidelity in the terrain in order to draw
 faster, but rather find more optimal ways to draw the data I have.
 
-*Sampling*:
+__Sampling__:
 
 One method to make the data more manageable was to "sample" the data at a 
 regular interval. While this would make drawing faster, this sacrifices
 fidelity in the terrain.
 
-*Nearest-Neighbor Interpolation*:
+__Nearest-Neighbor Interpolation__:
 
 Another method was to average the depth data, almost like re-sizing a photo. 
 This would make the depth feild smaller, but it would keep a more accurate 
 representation of the reduced data. Again, this would lead to a loss in 
 fidelity.
 
-*Triangle Strips*:
+__Triangle Strips__:
 
 Instead of drawing two trinagles per block, draw only one, by combining
 neighboring triangles. This take advantage of OpenGL's Triangle Stip drawing
@@ -83,7 +83,7 @@ It follows this example:
 However, this leaves gaps in the drawing, but it significantly reduces the
 number of triangles drawn.
 
-*Grouping Near-Parallel Planes*
+__Grouping Near-Parallel Planes__
 Now comes the real improvement! This method involves approaching the problem
 from an applied, Multi-Variable Calculus route. Instead of drawing individual
 triangles, many of whom have neighboring triangles that are near-parallel,
@@ -99,3 +99,12 @@ they are adjacent, then it finds the best way to fill that area with triangles,
 minimizing the number drawn. An example shown below:
 
 ![Efficiency!](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-big.png?raw=true)
+
+For a grid of size 100 x 100, here are the comparative triangle totals:
+|          Method          | Triangles Generated |
+|:------------------------:| -------------------:|
+| Triangle Boxes           |              19,602 |
+| Triangle Strips          |               5,200 |
+| Sampling (step = 2)      |               4,902 |
+| Interpolation (step = 2) |               4,902 |
+| Near-Parallel Grouping   |                 > 1 |
