@@ -101,6 +101,7 @@ minimizing the number drawn. An example shown below:
 ![Efficiency!](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-big.png?raw=true)
 
 For a grid of size 100 x 100, here are the comparative triangle totals:
+
 |          Method          | Triangles Generated |
 |:------------------------:| -------------------:|
 | Triangle Boxes           |              19,602 |
