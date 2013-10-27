@@ -21,7 +21,7 @@ class Worker(threading.Thread):
   physicsQueue = Queue.Queue()
   graphicsQueue = Queue.Queue()
 
-  def __init__(self, queueMax = 0):
+  def __init__(self, queueMax = 3):
     self.queueMax = queueMax
     self.physicsQueue = Queue.Queue(queueMax)
     self.graphicsQueue = Queue.Queue(queueMax)
@@ -43,15 +43,12 @@ class Worker(threading.Thread):
         self.fileRead = False
         continue
 
-      print "Converting"
       self.dataPlane = plane.PlaneData(self.rawData)
-      print "Erroring"
       self.dataPlane = errors.averageErrors(self.dataPlane, self.errorVal)
       #self.dataPlane = optimize.groupTriangles(self.dataPlane)
 
-      print "Storing"
-      self.physicsQueue.add(self.dataPlane)
-      self.graphicsQueue.add(self.dataPlane)
+      if(not(self.physicsQueue.full())): self.physicsQueue.put(self.dataPlane)
+      if(not(self.graphicsQueue.full())): self.graphicsQueue.put(self.dataPlane)
 
   def stop(self):
     self.exit = True

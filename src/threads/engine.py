@@ -9,10 +9,11 @@ class Worker(threading.Thread):
   exit = False
 
   # Variable to store depth data.
-  depthData = None
+  dataPlane = None
+  queue = None
 
   # Store whether the data has been renewed
-  updatedFlag = False
+  dataPlaneUpdated = False
 
   # ODE Shared access
   world = None
@@ -23,13 +24,13 @@ class Worker(threading.Thread):
   bodies = []
   geoms = []
     
-  def getDepthData():
-    if(not(self.queue.empty()) and not(self.updatedFlag)):
-      self.depthData = self.queue.get()
-      self.updated = True
+  def getDepthData(self):
+    if(not(self.queue.empty()) and not(self.dataPlaneUpdated)):
+      self.dataPlane = self.queue.get()
+      self.dataPlaneUpdated = True
 
-  def resetUpdatedFlag(state = False):
-    self.updatedFlag = state
+  def resetUpdatedFlag(self, state = False):
+    self.dataPlaneUpdated = state
 
   # Collision callback
   def near_callback(self, args, obj1, obj2):
@@ -57,12 +58,8 @@ class Worker(threading.Thread):
   
     self.collisionSpace = ode.Space()
   
-    assert(False)
-    verts = convert.depthToVertices(self.depthData)
-    faces = convert.depthToODEFaces(self.depthData, verts)
-
     meshData = ode.TriMeshData()
-    meshData.build(verts, faces)
+    meshData.build(self.dataPlane.toVertices(), self.dataPlane.toTriPairs())
     self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
   
     self.contacts = ode.JointGroup()
@@ -84,9 +81,9 @@ class Worker(threading.Thread):
 
   def __init__(self, queue):
     self.queue = queue
+    self.getDepthData()
     threading.Thread.__init__(self)
 
-    getDepthData()
 
   def run(self):
     self.initODE()

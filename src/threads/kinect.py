@@ -38,7 +38,9 @@ class Worker(threading.Thread):
 
       self.dataPlane = PlaneData(self.rawData)
       self.dataPlane = errors.averageErrors(self.dataPlane, errorVal)
-      self.dataPlane = optimize.groupTriangles(self.dataPlane)
+      #self.dataPlane = optimize.groupTriangles(self.dataPlane)
+
+      
 
   def stop(self):
     self.exit = True
