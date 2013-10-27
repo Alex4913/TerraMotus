@@ -7,7 +7,7 @@ from src.tools import plane
 ###############################################################################
 def getErrorPoints(dataPlane, errorVal):
   points = []
-  for point in dataPlane.toVertices()
+  for point in dataPlane.toVertices():
     if(point.z == errorVal):
       points += [point]
 
@@ -27,7 +27,7 @@ def getFringeErrorPoints(dataPlane, errorVal):
   return points
 
 def containsErrors(dataPlane, errorVal):
-  for point in dataPlane.toVertices()
+  for point in dataPlane.toVertices():
     if(point.z == errorVal):
       return True
 
@@ -53,8 +53,8 @@ def averageErrors(dataPlane, errorVal):
           sumOfNeighbors += neighbor.z
           validNeighbors += 1
 
-       point.z = sumOfNeighbors / validNeighbors
-       dataPlaneCopy = setPoint(point.x, point.y, point.z)
+      point.z = sumOfNeighbors / validNeighbors
+      dataPlaneCopy = dataPlaneCopy.setPoint(point.x, point.y, point.z)
 
     hasErrors = containsErrors(dataPlaneCopy, errorVal)
 

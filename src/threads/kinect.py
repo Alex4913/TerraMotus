@@ -1,25 +1,44 @@
 import threading
 import Queue
-
-import libreenect
-
 import time
 
-class thread(threading.Thread):
-  unfilteredData = None
+from freenect import sync_get_depth as getDepth
+from src.tools import errors, plane, optimize
 
-  depthBounds = None
-  noErrorData = None
+class Worker(threading.Thread):
+  errorVal = 2047.0
 
-  self.dataQueue = None
+  exit = False
 
-  def __init__(self, queue):
-    self.dataQueue = queue
+  # In degrees
+  triangleNormalRadix = 5
+
+  hasData = False
+  kinectDetected = False
+
+  queueMax = None
+  physicsQueue = Queue.Queue()
+  graphicsQueue = Queue.Queue()
+
+  def __init__(self, queueMax = 0):
+    self.queueMax = queueMax
+    physicsQueue = Queue.Queue(queueMax)
+    graphicsQueue = Queue.Queue(queueMax)
     threading.Thread.__init__(self)
 
-    try:
-      with noOut.noOut():
-        
-
   def run(self):
-    while
+    while(not(self.exit)):
+      try:
+        with nout.noSTDOut():
+          self.rawData = getDepth()
+        self.kinectDetected = True
+      except:
+        self.kinectDetected = False
+        continue
+
+      self.dataPlane = PlaneData(self.rawData)
+      self.dataPlane = errors.averageErrors(self.dataPlane, errorVal)
+      self.dataPlane = optimize.groupTriangles(self.dataPlane)
+
+  def stop(self):
+    self.exit = True

@@ -4,11 +4,9 @@ import Queue
 import ode
 import time
 
-import src.tools.convert as convert
-
-class thread(threading.Thread):
+class Worker(threading.Thread):
   FPS = 30.0
-  self.exit = False
+  exit = False
 
   # Variable to store depth data.
   depthData = None
@@ -59,6 +57,7 @@ class thread(threading.Thread):
   
     self.collisionSpace = ode.Space()
   
+    assert(False)
     verts = convert.depthToVertices(self.depthData)
     faces = convert.depthToODEFaces(self.depthData, verts)
 
@@ -83,11 +82,11 @@ class thread(threading.Thread):
 
     return (sphereBody, sphereGeom)
 
-  def __init__(self, depthData, queue):
+  def __init__(self, queue):
     self.queue = queue
     threading.Thread.__init__(self)
 
-    self.depthData = depthData
+    getDepthData()
 
   def run(self):
     self.initODE()

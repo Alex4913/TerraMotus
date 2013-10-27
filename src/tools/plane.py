@@ -1,3 +1,5 @@
+import copy
+
 class Point(object):
   (x, y, z) = (0, 0, 0)
 
@@ -80,14 +82,14 @@ class PlaneData(object):
       minVal = min(minVal, min(row)) if(minVal is not None) else min(row)
       maxVal = max(maxVal, max(row)) if(maxVal is not None) else max(row)
 
-   return (minVal, maxVal)
+    return (minVal, maxVal)
 
-  def getPoint(y, x):
-    return Point(y, x, rawData[y][x])
+  def getPoint(self, y, x):
+    return Point(y, x, self.rawData[y][x])
 
-  def setPoint(y, x, z):
+  def setPoint(self, y, x, z):
     """ Non-destructive method to change a point in the plane. """
-    newData = copy.deepcopy(rawData)
+    newData = copy.deepcopy(self.rawData)
     newData[y][x] = z
 
     newMax = max(self.maxVal, z)
@@ -96,7 +98,7 @@ class PlaneData(object):
     newVerts = copy.deepcopy(self.verts)
     newVerts[(y * self.width) + x] = Point(y, x, z)
 
-    return PlaneData(newData, newMin, newMax, newVerts, self.trinagles, 
+    return PlaneData(newData, (newMin, newMax), newVerts, self.triangles, 
                        self.trianglePairs)
 
   def toVertices(self):
@@ -106,7 +108,7 @@ class PlaneData(object):
     result = []
     for y in xrange(self.height):
       for x in xrange(self.width):
-        result += [getPoint(y, x)]
+        result += [self.getPoint(y, x)]
 
     self.verts = result
     return result
@@ -139,11 +141,11 @@ class PlaneData(object):
     return triangles
 
   def __init__(self, depthData, bounds = None, verts = None,
-                 triangles = None, tianglePairs = None):
+                 triangles = None, trianglePairs = None):
     self.rawData = depthData
     (self.height, self.width) = (len(depthData), len(depthData[0]))
 
-    (self.minVal, self.maxVal) = getBounds() if(bounds is None) else bounds
+    (self.minVal, self.maxVal) = self.getBounds() if(bounds is None) else bounds
     
     self.verts = verts
     self.triangles = triangles

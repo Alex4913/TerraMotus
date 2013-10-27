@@ -5,7 +5,7 @@ def getNeighbor(point, (dx, dy), dataPlane):
   point.y = point.y + dy
 
   if((point.x < 0 or point.x >= dataPlane.width) or
-       (point.y < 0 or point.y >= dataPlane.height))
+       ((point.y < 0) or (point.y >= dataPlane.height))):
     return None
   else:
     return dataPlane.getPoint(point.y, point.x)
