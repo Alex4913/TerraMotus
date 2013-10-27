@@ -36,10 +36,10 @@ class Triangle(object):
 
   normal = None
 
-  def getVector(pt1, pt2):
-    return (pt2.x - pt1.x, pt2.y - pt1.y, pt2.z - pt1.z)
+  def getVector(self, pt1, pt2):
+    return Vector(pt2.x - pt1.x, pt2.y - pt1.y, pt2.z - pt1.z)
   
-  def getCrossProduct(vec1, vec2):
+  def getCrossProduct(self, vec1, vec2):
     crossP = Vector(0, 0, 0)
     crossP.i =   (vec1.j + vec2.k) - (vec1.k + vec2.j)
     crossP.j = -((vec1.i + vec2.k) - (vec1.k + vec2.i))
@@ -47,15 +47,15 @@ class Triangle(object):
   
     return crossP
   
-  def toPoints():
+  def toPoints(self):
     return (self.pt1, self.pt2, self.pt3)
 
   def __init__(self, pt1, pt2, pt3):
     (self.pt1, self.pt2, self.pt3) = sorted((pt1, pt2, pt3))
-    self.vect1 = getVector(pt2, pt1)
-    self.vect2 = getVector(pt2, pt3)
+    self.vect1 = self.getVector(pt2, pt1)
+    self.vect2 = self.getVector(pt2, pt3)
   
-    self.normal = getCrossProduct(self.vect1, self.vect2)
+    self.normal = self.getCrossProduct(self.vect1, self.vect2)
 
   def __eq__(self, other):
     return self.normal == other.normal
@@ -88,18 +88,12 @@ class PlaneData(object):
     return Point(y, x, self.rawData[y][x])
 
   def setPoint(self, y, x, z):
-    """ Non-destructive method to change a point in the plane. """
-    newData = copy.deepcopy(self.rawData)
-    newData[y][x] = z
+    self.rawData[y][x] = z
 
-    newMax = max(self.maxVal, z)
-    newMin = min(self.minVal, z)
+    self.maxVal = max(self.maxVal, z)
+    self.maxVal = min(self.minVal, z)
 
-    newVerts = copy.deepcopy(self.verts)
-    newVerts[(y * self.width) + x] = Point(y, x, z)
-
-    return PlaneData(newData, (newMin, newMax), newVerts, self.triangles, 
-                       self.trianglePairs)
+    self.verts[(y * self.width) + x] = Point(y, x, z)
 
   def toVertices(self):
     if(self.verts is not None):
@@ -121,10 +115,13 @@ class PlaneData(object):
     for point in xrange(len(self.verts)): 
       if((point % self.width < self.width - 1) and 
            (point / self.width < self.height - 1)):
-        triangles += [Triangle(coordData(point), coordData(point + cols),
-                                 coordData(point + 1))]
-        triangles += [Triangle(coordData(point + 1), coordData(point + cols),
-                                 coordData(point + cols + 1))]
+        triangles += [Triangle(self.verts[point],
+                               self.verts[point + self.width],
+                               self.verts[point + 1])]
+
+        triangles += [Triangle(self.verts[point + 1],
+                               self.verts[point + self.width],
+                               self.verts[point + self.width + 1])]
 
     self.triangles = triangles
     return triangles
@@ -134,10 +131,10 @@ class PlaneData(object):
       return self.trianglePairs
 
     triangles = []
-    for triangle in toTriangles(): 
+    for triangle in self.toTriangles(): 
       triangles += [(triangle.toPoints())]
 
-    self.trianglePairs = faces
+    self.trianglePairs = triangles
     return triangles
 
   def __init__(self, depthData, bounds = None, verts = None,

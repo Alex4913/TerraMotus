@@ -1,5 +1,5 @@
 import neighborhood
-import copy
+import copy, time
 
 from src.tools import plane
 ###############################################################################
@@ -33,17 +33,34 @@ def containsErrors(dataPlane, errorVal):
 
   return False
 
-def averageErrors(dataPlane, errorVal):
-  hasErrors = containsErrors(dataPlane, errorVal)
-  if(not(hasErrors)):
-    return data
- 
-  dataPlaneCopy = copy.deepcopy(dataPlane)
-  while(hasErrors):
-    points = getFringeErrorPoints(dataPlaneCopy, errorVal)
+def averageRegularValues(dataPlane, errorVal):
+  points = getErrorPoints(dataPlane, errorVal)
 
+  for point in points:
+    neighbors = neighborhood.getNeighbors(point, dataPlane)
+
+    validNeighbors = 0
+    sumOfNeighbors = 0
+
+    for neighbor in neighbors:
+      if((neighbor is not None) and (neighbor.z != errorVal)):
+        sumOfNeighbors += neighbor.z
+        validNeighbors += 1
+
+    point.z = sumOfNeighbors / validNeighbors
+    startTime2 = time.time()
+    dataPlane.setPoint(point.x, point.y, point.z)
+
+  print len(getErrorPoints(dataPlane, errorVal))
+  return dataPlane
+
+def averageFringeValues(dataPlane, errorVal):
+  points = getFringeErrorPoints(dataPlane, errorVal)
+
+  errorsLeft = len(points)
+  while(errorsLeft > 0):
     for point in points:
-      neighbors = neighborhood.getNeighbors(point, dataPlaneCopy)
+      neighbors = neighborhood.getNeighbors(point, dataPlane)
 
       validNeighbors = 0
       sumOfNeighbors = 0
@@ -54,8 +71,14 @@ def averageErrors(dataPlane, errorVal):
           validNeighbors += 1
 
       point.z = sumOfNeighbors / validNeighbors
-      dataPlaneCopy = dataPlaneCopy.setPoint(point.x, point.y, point.z)
+      dataPlane.setPoint(point.x, point.y, point.z)
 
-    hasErrors = containsErrors(dataPlaneCopy, errorVal)
+    points = getFringeErrorPoints(dataPlane, errorVal)
+    errorsLeft = len(points)
 
-  return dataPlaneCopy
+  return dataPlane
+
+def averageErrors(dataPlane, errorVal):
+  dataPlane = averageFringeValues(dataPlane, errorVal)
+  #dataPlane = averageRegularValues(dataPlane, errorVal)
+  return dataPlane

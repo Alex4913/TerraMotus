@@ -30,7 +30,8 @@ def parse(fileName):
       data = [row]
     else:
       data += [row]
-  
+
+  f.close()  
   data = stringArrayToFloat(data)
-  
+
   return data
