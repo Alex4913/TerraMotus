@@ -6,7 +6,7 @@ import numpy
 import time
 
 from src.threads import kinect, csvreader, engine
-from src.tools import *
+from src.tools import plane
 
 def initCSVReader():
   print "Emulating Kinect with CSVReader Thread"
@@ -22,6 +22,7 @@ def initCSVReader():
   while(instance.physicsQueue.empty() or instance.graphicsQueue.empty()):
     time.sleep(0.100)
   print "   -> Got it!"
+  return instance
 
 def initKinect():
   print "Starting Kinect Thread"
@@ -42,7 +43,7 @@ def initKinect():
   print "   -> Found!"
 
   print " -> Waiting for initial data..."
-  while(instance.physicsQueue.empty() or instance.graphicsQueue.empty):
+  while(instance.physicsQueue.empty() or instance.graphicsQueue.empty()):
     time.sleep(0.100)
   print "   -> Got it!"
 
@@ -52,8 +53,8 @@ def initPhysics(physicsQueue):
   print "Starting Physics Engine"
 
   instance = engine.Worker(physicsQueue)
-  print " -> Checking for data...", 
-  while(not(instance.updateFlag)):
+  print " -> Checking for data..."
+  while(not(instance.dataPlaneUpdated)):
     continue
   print "   -> Got it!"
 
@@ -69,22 +70,30 @@ def init():
   print "    .''::: .:    '.    /_  __/__ ___________ _"
   print "   /   :::::'      \    / / / -_) __/ __/ _ `/"
   print "  ;.    ':' `       ;  /_/__\\__/_/ /_/__\\_,_/"
-  print "  |       '..       |    /  |/  /__  / /___ _____"
+  print "  |       '..       |    /  |/  /__  / /__ ______"
   print "  ; '      ::::.    ;   / /|_/ / _ \\/ __/ // (_-<"
   print "   \       '::::   /   /_/  /_/\\___/\\__/\\_,_/___/"
   print "    '.      :::  .'"
   print "      '-.___'_.-'"
   print
 
-  kinectThread = initKinect()
-  physicsThread = initPhysics(kinectThread.physicsQueue)
+  dataThread = initKinect()
+  physicsThread = initPhysics(dataThread.physicsQueue)
 
-  return (kinectThread, physicsThread)
+  return (dataThread, physicsThread)
 
 def main():
-  (kinectThread, physicsThread) = init()
+  (dataThread, physicsThread) = init()
   print "Waiting in Main!"
   while(True):
-    time.sleep(0.1)
+    try:
+      time.sleep(0.1)
+    except KeyboardInterrupt:
+      print
+      print "Caught kill signal!"
+      break
+
+  for thread in (dataThread, physicsThread):
+    thread.stop()
 
 main()
