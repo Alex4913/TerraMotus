@@ -8,22 +8,16 @@ from src.tools import errors, plane, optimize
 class Worker(threading.Thread):
   errorVal = 2047.0
 
-  exit = False
-
   # In degrees
   triangleNormalRadix = 5
 
-  hasData = False
-  kinectDetected = False
-
-  queueMax = None
-  physicsQueue = Queue.Queue()
-  graphicsQueue = Queue.Queue()
-
   def __init__(self, queueMax = 0):
     self.queueMax = queueMax
-    physicsQueue = Queue.Queue(queueMax)
-    graphicsQueue = Queue.Queue(queueMax)
+    self.physicsQueue = Queue.Queue(queueMax)
+    self.graphicsQueue = Queue.Queue(queueMax)
+
+    self.exit = False
+    self.kinectDetected = False
     threading.Thread.__init__(self)
 
   def run(self):
@@ -31,16 +25,16 @@ class Worker(threading.Thread):
       try:
         with nout.noSTDOut():
           self.rawData = getDepth()
+
         self.kinectDetected = True
+
+        self.dataPlane = PlaneData(self.rawData)
+        self.dataPlane = errors.averageErrors(self.dataPlane, Worker.errorVal)
+        #self.dataPlane = optimize.groupTriangles(self.dataPlane)
+
       except:
         self.kinectDetected = False
         continue
-
-      self.dataPlane = PlaneData(self.rawData)
-      self.dataPlane = errors.averageErrors(self.dataPlane, errorVal)
-      #self.dataPlane = optimize.groupTriangles(self.dataPlane)
-
-      
 
   def stop(self):
     self.exit = True

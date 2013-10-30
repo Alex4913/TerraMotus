@@ -8,18 +8,8 @@ class Worker(threading.Thread):
   fileName = "data.csv"
   errorVal = 2047.0
 
-  exit = False
-
   # In degrees
   triangleNormalRadix = 5
-
-  hasData = False
-  fileRead = False
-  fileExists = False
-
-  queueMax = None
-  physicsQueue = Queue.Queue()
-  graphicsQueue = Queue.Queue()
 
   def __init__(self, queueMax = 3):
     self.queueMax = queueMax
@@ -27,28 +17,31 @@ class Worker(threading.Thread):
     self.graphicsQueue = Queue.Queue(queueMax)
 
     try:
-      open(self.fileName).close()
+      open(Worker.fileName).close()
       self.fileExists = True
     except:
       self.fileExists = False
 
+    self.exit = False
     threading.Thread.__init__(self)
 
   def run(self):
     while(not(self.exit)):
       try:
-        self.rawData = parser.parse(self.fileName)
+        self.rawData = parser.parse(Worker.fileName)
         self.fileRead = True
+        
+        self.dataPlane = plane.PlaneData(self.rawData)
+        self.dataPlane = errors.averageErrors(self.dataPlane, Worker.errorVal)
+        #self.dataPlane = optimize.groupTriangles(self.dataPlane)
+
+        if(not(self.physicsQueue.full())): self.physicsQueue.put(self.dataPlane)
+        if(not(self.graphicsQueue.full())): 
+          self.graphicsQueue.put(self.dataPlane)
+
       except:
         self.fileRead = False
         continue
-
-      self.dataPlane = plane.PlaneData(self.rawData)
-      self.dataPlane = errors.averageErrors(self.dataPlane, self.errorVal)
-      #self.dataPlane = optimize.groupTriangles(self.dataPlane)
-
-      if(not(self.physicsQueue.full())): self.physicsQueue.put(self.dataPlane)
-      if(not(self.graphicsQueue.full())): self.graphicsQueue.put(self.dataPlane)
 
   def stop(self):
     self.exit = True

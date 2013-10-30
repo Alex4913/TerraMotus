@@ -7,15 +7,8 @@ def stringArrayToFloat(array):
   for row in array:
     rowData = []
     for col in row:
-      if(rowData == []):
-        rowData = [float(col)]
-      else:
-        rowData += [float(col)]
-
-    if(returnArray == []):
-      returnArray = [rowData]
-    else:
-      returnArray += [rowData]
+      rowData += [float(col)]
+    returnArray += [rowData]
 
   return returnArray
 
@@ -26,10 +19,7 @@ def parse(fileName):
 
   data = []
   for row in reader:
-    if(data == []):
-      data = [row]
-    else:
-      data += [row]
+    data += [row]
 
   f.close()  
   data = stringArrayToFloat(data)

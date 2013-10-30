@@ -6,31 +6,10 @@ import time
 
 class Worker(threading.Thread):
   FPS = 30.0
-  exit = False
 
-  # Variable to store depth data.
-  dataPlane = None
-  queue = None
-
-  # Store whether the data has been renewed
-  dataPlaneUpdated = False
-
-  # ODE Shared access
-  world = None
-  collisionSpace = None
-  ground = None
-  contacts = None
-
-  bodies = []
-  geoms = []
-    
   def getDepthData(self):
-    if(not(self.queue.empty()) and not(self.dataPlaneUpdated)):
+    if(not(self.queue.empty())):
       self.dataPlane = self.queue.get()
-      self.dataPlaneUpdated = True
-
-  def resetUpdatedFlag(self, state = False):
-    self.dataPlaneUpdated = state
 
   # Collision callback
   def near_callback(self, args, obj1, obj2):
@@ -59,7 +38,8 @@ class Worker(threading.Thread):
     self.collisionSpace = ode.Space()
   
     meshData = ode.TriMeshData()
-    meshData.build(self.dataPlane.toVertices(), self.dataPlane.toTriPairs())
+    meshData.build(self.dataPlane.toRawVertices(),
+                     self.dataPlane.toTriangleIndexes())
     self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
   
     self.contacts = ode.JointGroup()
@@ -80,19 +60,16 @@ class Worker(threading.Thread):
     return (sphereBody, sphereGeom)
 
   def __init__(self, queue):
+    self.depthData = None
     self.queue = queue
     self.getDepthData()
-    threading.Thread.__init__(self)
 
+    self.exit = False
+    threading.Thread.__init__(self)
 
   def run(self):
     self.initODE()
     simTimeStep = 1.0 / self.FPS
-
-    (body, geom) = self.createSphere(self.world, self.collisionSpace, 40, 40, 10, 2, 1)
-
-    self.bodies = [body]
-    self.geoms = [geom]
 
     while(not(self.exit)):
       self.collisionSpace.collide((self.world, self.contacts),
@@ -100,8 +77,6 @@ class Worker(threading.Thread):
       self.world.step(simTimeStep)
       time.sleep(simTimeStep)
       self.contacts.empty()
-
-    print "Physics Engine Stopped"
 
   def stop(self):
     self.exit = True

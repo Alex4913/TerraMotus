@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import sys
 import time
 
 from src.threads import kinect, csvreader, engine
@@ -57,18 +58,15 @@ def initPhysics(physicsQueue):
 
   instance = engine.Worker(physicsQueue)
   print " -> Checking for data..."
-  while(not(instance.dataPlaneUpdated)):
+  while(instance.dataPlane is None):
     continue
   print "   -> Got it!"
 
   print " -> Starting engine..."
   instance.start()
-  print "   -> Choo choo!"
+  print "   -> Choo choo, mothafucka!"
 
   return instance
-
-###############################################################################
-###############################################################################
 
 ###############################################################################
 ###                                 GL Init                                 ###
@@ -103,6 +101,7 @@ def preGL():
   glLoadIdentity()
   gluPerspective(45, 1.3333, 0.2, 200)
   glMatrixMode(GL_MODELVIEW)
+  gluLookAt (30, 30, 30, 0, 0, 0, 0, 0, 1)
 
 def postGL():
   glutSwapBuffers()
@@ -114,25 +113,41 @@ def setCamera(x, y, z, roll, pitch, yaw):
   glTranslatef(-x, -y, -z)
 
 def drawTriMesh(dataPlane):
-  shapes = vbo.VBO(numpy.array(dataPlane.toRawVertices(), 'f'))
+  verts = vbo.VBO(numpy.array(dataPlane.toVBO(), 'f'))
+
+  colorRaw = [(1.0, 1.0, 1.0), (0, 0, 0)]*(len(dataPlane.toVBO())/2)
+
+  color = vbo.VBO(numpy.array(colorRaw, 'f'))
 
   try:
-    shapes.bind()
+    glEnableClientState(GL_COLOR_ARRAY)
+    color.bind()
     try:
-      glEnableClientState(GL_VERTEX_ARRAY)
-      glVertexPointerf(shapes)
-      glDrawArrays(GL_TRIANGLES, 0, len(dataPlane.toRawVertices()))
-    finally:
-      shapes.unbind()
-      glDisableClientState(GL_VERTEX_ARRAY)
-  except:
-    print "Oh No!"
+      glColorPointer(3, GL_FLOAT, 0, color)
+    except: pass
 
-def drawFrame(data):
+    glEnableClientState(GL_VERTEX_ARRAY)
+    verts.bind()
+    try:
+      glVertexPointer(3, GL_FLOAT, 0, verts)
+      glDrawArrays(GL_TRIANGLES, 0, len(dataPlane.toVBO()))
+    except Exception as e:
+      print e
+    finally:
+      glDisableClientState(GL_COLOR_ARRAY)
+      glDisableClientState(GL_VERTEX_ARRAY)
+      verts.unbind()
+      color.unbind()
+  except Exception as e:
+    print e
+
+def drawFrame():
   preGL()
 
   glPushMatrix()
-  glTranslatef(-data.dataPlane.height/2.0, -data.dataPlane.width/2.0, 0)
+  if(not(data.dataThread.graphicsQueue.empty())):
+    data.dataPlane = data.dataThread.graphicsQueue.get()
+  glTranslatef(-data.dataPlane.width/2.0, -data.dataPlane.height/2.0, 0)
   drawTriMesh(data.dataPlane)
   glPopMatrix()
 
@@ -145,7 +160,7 @@ def reshape(width, height):
   glLoadIdentity()
   gluPerspective(45, 1.3333, 0.2, 200)
   glMatrixMode(GL_MODELVIEW)
-  gluLookAt (25, 25, 5, 26, 26, 3, 0, 0, 1)
+  gluLookAt (50, 50, 50, 0, 0, 0, 0, 0, 1)
 
 
 def runGL(data):
@@ -156,14 +171,14 @@ def runGL(data):
 
   initGL(data)
 
-  glutDisplayFunc(lambda func : drawFrame(data))
-  glutIdleFunc(lambda func : drawFrame(data))
-  glutReshapeFunc(lambda func : drawFrame(data))
+  glutDisplayFunc(drawFrame)
+  glutIdleFunc(drawFrame)
+  glutReshapeFunc(reshape)
 
   glutMainLoop()
 
 
-def init():
+def init(args):
   print
   print "          _____ "
   print "       .-'.  ':'-.       ______" 
@@ -177,13 +192,13 @@ def init():
   print "       '-.___'_.-'"
   print
 
-  dataThread = initKinect()
+  dataThread = initCSVReader() if("--no-kinect" in args) else initKinect()
   physicsThread = initPhysics(dataThread.physicsQueue)
 
   return (dataThread, physicsThread)
 
 def main():
-  (dataThread, physicsThread) = init()
+  (dataThread, physicsThread) = init(sys.argv)
 
   global data
   class Empty(object): pass
@@ -195,6 +210,7 @@ def main():
   data.backgroundColor = (0.0, 178.0/255.0, 255.0/255.0, 255.0/255.0)
 
   runGL(data)
+  time.sleep(60)
   print "Exiting"
   for thread in (dataThread, physicsThread):
     thread.stop()
