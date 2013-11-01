@@ -2,7 +2,7 @@
 import sys
 import time
 
-from src.threads import kinect, csvreader, engine
+from src.threads import kinect, csvreader, engine, display
 from src.tools import plane
 
 ###############################################################################
@@ -59,7 +59,7 @@ def initPhysics(physicsQueue):
   instance = engine.Worker(physicsQueue)
   print " -> Checking for data..."
   while(instance.dataPlane is None):
-    continue
+    time.sleep(0.100)
   print "   -> Got it!"
 
   print " -> Starting engine..."
@@ -68,117 +68,7 @@ def initPhysics(physicsQueue):
 
   return instance
 
-###############################################################################
-###                                 GL Init                                 ###
-###############################################################################
-
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.GLUT import *
-from OpenGL.arrays import vbo
-import numpy
-
-import math
-
-data = None
-
-def initGL(data):
-  if(not(data.dataThread.graphicsQueue.empty())):
-    data.dataPlane = data.dataThread.graphicsQueue.get()
-  else:
-    assert(False)
-
-  glClearColor(*data.backgroundColor)
-  glShadeModel(GL_FLAT)
-
-def preGL():
-  glClear(GL_COLOR_BUFFER_BIT)
-  # White
-  glColor3f(1.0, 1.0, 1.0)
-  glLoadIdentity()
-  
-  glMatrixMode(GL_PROJECTION)
-  glLoadIdentity()
-  gluPerspective(45, 1.3333, 0.2, 200)
-  glMatrixMode(GL_MODELVIEW)
-  gluLookAt (30, 30, 30, 0, 0, 0, 0, 0, 1)
-
-def postGL():
-  glutSwapBuffers()
-
-def setCamera(x, y, z, roll, pitch, yaw):
-  glRotate(-r, 1, 0, 0)
-  glRotate(-p, 0, 1, 0)
-  glRotate(-w, 0, 0, 1)
-  glTranslatef(-x, -y, -z)
-
-def drawTriMesh(dataPlane):
-  verts = vbo.VBO(numpy.array(dataPlane.toVBO(), 'f'))
-
-  colorRaw = [(1.0, 1.0, 1.0), (0, 0, 0)]*(len(dataPlane.toVBO())/2)
-
-  color = vbo.VBO(numpy.array(colorRaw, 'f'))
-
-  try:
-    glEnableClientState(GL_COLOR_ARRAY)
-    color.bind()
-    try:
-      glColorPointer(3, GL_FLOAT, 0, color)
-    except: pass
-
-    glEnableClientState(GL_VERTEX_ARRAY)
-    verts.bind()
-    try:
-      glVertexPointer(3, GL_FLOAT, 0, verts)
-      glDrawArrays(GL_TRIANGLES, 0, len(dataPlane.toVBO()))
-    except Exception as e:
-      print e
-    finally:
-      glDisableClientState(GL_COLOR_ARRAY)
-      glDisableClientState(GL_VERTEX_ARRAY)
-      verts.unbind()
-      color.unbind()
-  except Exception as e:
-    print e
-
-def drawFrame():
-  preGL()
-
-  glPushMatrix()
-  if(not(data.dataThread.graphicsQueue.empty())):
-    data.dataPlane = data.dataThread.graphicsQueue.get()
-  glTranslatef(-data.dataPlane.width/2.0, -data.dataPlane.height/2.0, 0)
-  drawTriMesh(data.dataPlane)
-  glPopMatrix()
-
-  time.sleep(1.0/30.0)
-  postGL()
-
-def reshape(width, height):
-  glViewport(0, 0, width, height)
-  glMatrixMode(GL_PROJECTION)
-  glLoadIdentity()
-  gluPerspective(45, 1.3333, 0.2, 200)
-  glMatrixMode(GL_MODELVIEW)
-  gluLookAt (50, 50, 50, 0, 0, 0, 0, 0, 1)
-
-
-def runGL(data):
-  glutInit()
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB)
-  glutInitWindowSize (640, 480)
-  glutCreateWindow("-= TerraMotus =-")
-
-  initGL(data)
-
-  glutDisplayFunc(drawFrame)
-  glutIdleFunc(drawFrame)
-  glutReshapeFunc(reshape)
-
-  glutMainLoop()
-
-
-def init(args):
+def drawLogo():
   print
   print "          _____ "
   print "       .-'.  ':'-.       ______" 
@@ -192,7 +82,19 @@ def init(args):
   print "       '-.___'_.-'"
   print
 
-  dataThread = initCSVReader() if("--no-kinect" in args) else initKinect()
+def init(args):
+  if(("--help" in args) or ("-h" in args)):
+    print "Usage:", args[0], "[options]"
+    print "\t-h, --help\tPrint help information"
+    print "\t-nk, --no-kinect\tSkip looking for a Kinect"
+    exit()
+
+  drawLogo()
+
+  dataThread = None
+  if(("--no-kinect" in args) or ("-nk" in args)): dataThread = initCSVReader()
+  else:                                           dataThread = initKinect()
+
   physicsThread = initPhysics(dataThread.physicsQueue)
 
   return (dataThread, physicsThread)
@@ -200,19 +102,8 @@ def init(args):
 def main():
   (dataThread, physicsThread) = init(sys.argv)
 
-  global data
-  class Empty(object): pass
-  data = Empty()
+  print
+  print "Starting Display"
+  display.Worker(dataThread, physicsThread)
 
-  data.dataThread = dataThread
-  data.physicsThread = physicsThread
-  # Sky Blue
-  data.backgroundColor = (0.0, 178.0/255.0, 255.0/255.0, 255.0/255.0)
-
-  runGL(data)
-  time.sleep(60)
-  print "Exiting"
-  for thread in (dataThread, physicsThread):
-    thread.stop()
-
-main()
+if(__name__ == "__main__"): main()
