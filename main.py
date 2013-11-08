@@ -34,13 +34,10 @@ def initKinect():
   instance.start()
 
   print " -> Checking for Kinect-ivity..."
-  startTime = time.time()
-  while(not(instance.kinectDetected) and time.time() - startTime <= 5):
-    time.sleep(0.100)
-
+  # Wait a tiny bit to ensure that the Kinect has been detected by now
+  time.sleep(1)
   if(not(instance.kinectDetected)):
     print "   -> Not Found! Using CSVReader instead"
-    time.sleep(0.1)
     instance.stop()
     return initCSVReader()
   print "   -> Found!"
