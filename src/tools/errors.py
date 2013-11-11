@@ -16,13 +16,13 @@ def getErrorPoints(dataPlane, errorVal):
 def getFringeErrorPoints(dataPlane, errorVal):
   points = []
   for point in dataPlane.toVertices():
-    neighbors = neighborhood.getNeighbors(point, dataPlane)
+    neighbors = neighborhood.getPlaneNeighbors(point, dataPlane)
 
     if(point.z == errorVal): 
-     for neighbor in neighbors:
-       if((neighbor is not None) and (neighbor.z != errorVal)):
-         points += [point]
-         break
+      for neighbor in neighbors:
+        if((neighbor is not None) and (neighbor.z != errorVal)):
+          points += [point]
+          break
 
   return points
 
@@ -33,34 +33,12 @@ def containsErrors(dataPlane, errorVal):
 
   return False
 
-def averageRegularValues(dataPlane, errorVal):
-  points = getErrorPoints(dataPlane, errorVal)
-
-  for point in points:
-    neighbors = neighborhood.getNeighbors(point, dataPlane)
-
-    validNeighbors = 0
-    sumOfNeighbors = 0
-
-    for neighbor in neighbors:
-      if((neighbor is not None) and (neighbor.z != errorVal)):
-        sumOfNeighbors += neighbor.z
-        validNeighbors += 1
-
-    point.z = sumOfNeighbors / validNeighbors
-    startTime2 = time.time()
-    dataPlane.setPoint(point.x, point.y, point.z)
-
-  print len(getErrorPoints(dataPlane, errorVal))
-  return dataPlane
-
 def averageFringeValues(dataPlane, errorVal):
   points = getFringeErrorPoints(dataPlane, errorVal)
 
-  errorsLeft = len(points)
-  while(errorsLeft > 0):
+  while(len(points) > 0):
     for point in points:
-      neighbors = neighborhood.getNeighbors(point, dataPlane)
+      neighbors = neighborhood.getPlaneNeighbors(point, dataPlane)
 
       validNeighbors = 0
       sumOfNeighbors = 0
@@ -70,15 +48,11 @@ def averageFringeValues(dataPlane, errorVal):
           sumOfNeighbors += neighbor.z
           validNeighbors += 1
 
-      point.z = sumOfNeighbors / validNeighbors
-      dataPlane.setPoint(point.x, point.y, point.z)
+      dataPlane.setPoint(point.x, point.y, float(sumOfNeighbors)/validNeighbors)
 
     points = getFringeErrorPoints(dataPlane, errorVal)
-    errorsLeft = len(points)
 
   return dataPlane
 
 def averageErrors(dataPlane, errorVal):
-  dataPlane = averageFringeValues(dataPlane, errorVal)
-  #dataPlane = averageRegularValues(dataPlane, errorVal)
-  return dataPlane
+  return averageFringeValues(dataPlane, errorVal)
