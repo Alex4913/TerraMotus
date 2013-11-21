@@ -176,8 +176,9 @@ class PlaneData(object):
     self.vbo = flattenedAndConverted
     return flattenedAndConverted
 
-  def __init__(self, depthData):
+  def __init__(self, depthData, name = ""):
     self.rawData = depthData
+    self.name = name
     (self.height, self.width) = (len(depthData), len(depthData[0]))
 
     (self.minVal, self.maxVal) = self.getBounds()
@@ -187,3 +188,10 @@ class PlaneData(object):
     self.triangles = None
     self.triangleIndexes = None
     self.vbo = None
+
+  def __repr__(self):
+    name = "self.name='%s'" % self.name
+    if(name != ""):
+      return "%s(%s, %s)" % (PlaneData.__name__, str(self.rawData), name)
+    else:
+      return "%s(%s)" % (PlaneData.__name__, str(self.rawData))
