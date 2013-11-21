@@ -9,59 +9,63 @@ from src.tools import plane
 ###                             Thread Init                                 ###
 ###############################################################################
 
+# Simple method to both print and append to a log file (with timestamp)
+def log(message):
+  logFile = "log.log"
+  f = open(logFile, "a+")
+  output = time.strftime("[%x, %X]") + ": " + message
+  print output
+  f.write(output + "\n")
+  f.close()
+
+
 def initCSVReader():
-  print
-  print "Emulating Kinect with CSVReader Thread"
-  instance = csvreader.Worker()
+  mapDir = "maps"
+  log("Emulating Kinect with CSVReader Thread")
+  instance = csvreader.Worker(mapDir)
+  instance.setPlaneName("kinect-data")
 
   if(not(instance.fileExists)):
-    print " -> No data in " + instance.fileName + "! Aborting."
+    log("No data in " + instance.planeName + "! Aborting.")
     instance.stop()
     exit()
 
-  print " -> Reading in CSV"
+  log("Reading in CSV")
   instance.start()
   while(instance.physicsQueue.empty() or instance.graphicsQueue.empty()):
     time.sleep(0.100)
-  print "   -> Got it!"
   return instance
 
 def initKinect():
-  print
-  print "Starting Kinect Thread"
+  log("Starting Kinect Thread")
 
   instance = kinect.Worker()
   instance.start()
 
-  print " -> Checking for Kinect-ivity..."
+  log("Checking for Kinect-ivity...")
   # Wait a tiny bit to ensure that the Kinect has been detected by now
   time.sleep(1)
   if(not(instance.kinectDetected)):
-    print "   -> Not Found! Using CSVReader instead"
+    log("Not Found! Using CSVReader instead")
     instance.stop()
     return initCSVReader()
-  print "   -> Found!"
 
-  print " -> Waiting for initial data..."
+  log("Waiting for initial data...")
   while(instance.physicsQueue.empty() or instance.graphicsQueue.empty()):
     time.sleep(0.100)
-  print "   -> Got it!"
 
   return instance
 
 def initPhysics(physicsQueue):
-  print
-  print "Starting Physics Engine"
+  log("Starting Physics Engine")
 
   instance = engine.Worker(physicsQueue)
-  print " -> Checking for data..."
+  log("Checking for data...")
   while(instance.dataPlane is None):
     time.sleep(0.100)
-  print "   -> Got it!"
 
-  print " -> Starting engine..."
+  log("Starting engine...")
   instance.start()
-  print "   -> Choo choo, mothafucka!"
 
   return instance
 
@@ -99,8 +103,8 @@ def init(args):
 def main():
   (dataThread, physicsThread) = init(sys.argv)
 
-  print
-  print "Starting Display"
+  log("Starting Display")
   display.Worker(dataThread, physicsThread)
+  log("Exiting")
 
 if(__name__ == "__main__"): main()

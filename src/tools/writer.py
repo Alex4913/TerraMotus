@@ -1,5 +1,5 @@
-def writePlaneToFile(dataPlane, fileName):
-  f = open(fileName, "w")
+def writePlaneToFile(dataPlane, path):
+  f = open(path, "w")
   for row in xrange(dataPlane.height):
     temp = str(dataPlane.rawData[row][0])
     for col in xrange(1, dataPlane.width):

@@ -12,16 +12,14 @@ def stringArrayToFloat(array):
 
   return returnArray
 
-def parse(fileName):
+def parse(planeName):
   """ Open a data CSV and return a 2D list of floats """
-  f = open(fileName, 'r')
+  f = open(planeName, 'r')
   reader = csv.reader(f, delimiter=',')
 
   data = []
   for row in reader:
     data += [row]
 
-  f.close()  
-  data = stringArrayToFloat(data)
-
-  return data
+  f.close()
+  return stringArrayToFloat(data)
