@@ -151,7 +151,7 @@ class PlaneData(object):
     
     triangles = []
     for point in xrange(len(self.verts)):
-     if((point % self.width < self.width - 1) and 
+      if((point % self.width < self.width - 1) and 
           (point / self.width < self.height - 1)): 
         triangles += [(point, point + self.width, point + 1)]
         triangles += [(point + 1, point + self.width, point + self.width + 1)]
