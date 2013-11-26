@@ -23,7 +23,7 @@ class Worker(threading.Thread):
     self.kinectDetected = False
     threading.Thread.__init__(self)
 
-  def setPlaneName(name):
+  def setPlaneName(self, name):
     self.planeName = name
     self.path = (self.mapDir +"/"+ name if(self.mapDir != "") else name)+".csv"
     try:
