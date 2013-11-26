@@ -4,8 +4,10 @@ import Queue
 import ode
 import time
 
+from src.threads.resources import car
+
 class Worker(threading.Thread):
-  FPS = 30.0
+  UPS = 30.0
 
   def getDepthData(self):
     if(not(self.queue.empty())):
@@ -41,8 +43,11 @@ class Worker(threading.Thread):
     meshData.build(self.dataPlane.toRawVertices(),
                      self.dataPlane.toTriangleIndexes())
     self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
+    self.ground.setPosition((-self.dataPlane.width / 2.0, 
+                             -self.dataPlane.height / 2.0, 0))
   
-    self.contacts = ode.JointGroup()
+    self.contacts = ode.JointGroup() 
+    self.car = car.Car(self.world, self.collisionSpace)
 
   def createSphere(self, world, collisionSpace, x, y, z, r, mass):
     sphereBody = ode.Body(world)
@@ -61,22 +66,28 @@ class Worker(threading.Thread):
 
   def __init__(self, queue):
     self.depthData = None
+    self.car = None
     self.queue = queue
     self.getDepthData()
 
     self.exit = False
+    self.paused = True
     threading.Thread.__init__(self)
 
   def run(self):
     self.initODE()
-    simTimeStep = 1.0 / self.FPS
+    simTimeStep = 1.0 / Worker.UPS
 
     while(not(self.exit)):
-      self.collisionSpace.collide((self.world, self.contacts),
-                                    self.near_callback)
-      self.world.step(simTimeStep)
-      time.sleep(simTimeStep)
-      self.contacts.empty()
+      if(not(self.paused)):
+        self.collisionSpace.collide((self.world, self.contacts),
+                                      self.near_callback)
+        self.world.step(simTimeStep)
+        time.sleep(simTimeStep)
+
+        self.contacts.empty()
+      else:
+        time.sleep(simTimeStep)
 
   def stop(self):
     self.exit = True
