@@ -9,6 +9,8 @@ from src.tools import plane
 ###                             Thread Init                                 ###
 ###############################################################################
 
+PLANE = "tilt"
+
 # Simple method to both print and append to a log file (with timestamp)
 def log(message):
   logFile = "log.log"
@@ -18,12 +20,11 @@ def log(message):
   f.write(output + "\n")
   f.close()
 
-
 def initCSVReader():
   mapDir = "maps"
   log("Emulating Kinect with CSVReader Thread")
   instance = csvreader.Worker(mapDir)
-  instance.setPlaneName("kinect-data")
+  instance.setPlaneName(PLANE)
 
   if(not(instance.fileExists)):
     log("No data in " + instance.planeName + "! Aborting.")
@@ -40,9 +41,10 @@ def initKinect():
   log("Starting Kinect Thread")
 
   instance = kinect.Worker()
+  instance.setPlaneName(PLANE)
   instance.start()
 
-  log("Checking for Kinect-ivity...")
+  log("Checking for Kinect-ivity")
   # Wait a tiny bit to ensure that the Kinect has been detected by now
   time.sleep(1)
   if(not(instance.kinectDetected)):
@@ -50,7 +52,7 @@ def initKinect():
     instance.stop()
     return initCSVReader()
 
-  log("Waiting for initial data...")
+  log("Waiting for initial data")
   while(instance.physicsQueue.empty() or instance.graphicsQueue.empty()):
     time.sleep(0.100)
 
@@ -60,11 +62,11 @@ def initPhysics(physicsQueue):
   log("Starting Physics Engine")
 
   instance = engine.Worker(physicsQueue)
-  log("Checking for data...")
+  log("Checking for data")
   while(instance.dataPlane is None):
     time.sleep(0.100)
 
-  log("Starting engine...")
+  log("Starting engine")
   instance.start()
 
   return instance
@@ -103,7 +105,7 @@ def init(args):
 def main():
   (dataThread, physicsThread) = init(sys.argv)
 
-  log("Starting Display")
+  log("Starting display")
   display.Worker(dataThread, physicsThread)
   log("Exiting")
 
