@@ -8,7 +8,7 @@ import time
 import math
 
 from src.threads.resources import car, buttons, menu
-from src.threads.frames import frame
+from src.threads.frames import frame, menus
 from src.threads import converter, uploadThread, engine
 
 class Simulation(frame.Frame):
@@ -19,8 +19,14 @@ class Simulation(frame.Frame):
   # White with no opacity
   defaultColor = (1.0, 1.0, 1.0)
 
+  # In seconds
+  planeUpdateDelay = 2
+
   HOME = 1
   UPLOAD = 2
+  PAUSE = 3
+  PAUSE_TEX = "pause.png"
+  UNPAUSE_TEX = "unpause.png"
 
   def preGL(self):
     glEnable(GL_DEPTH_TEST)
@@ -33,7 +39,7 @@ class Simulation(frame.Frame):
     glLoadIdentity()
     
     # Degree of FOV, width / height ratio, min dist, max dist
-    gluPerspective(60, 1.5, 0.5, 500)
+    gluPerspective(60, 1.5, 0.2, 1000)
     glMatrixMode(GL_MODELVIEW)
     self.setCamera(self.eyeX, self.eyeY, self.eyeZ,
                    self.eyeRoll, self.eyePitch, self.eyeYaw)
@@ -66,6 +72,7 @@ class Simulation(frame.Frame):
       self.update = False
  
   def drawTriMesh(self):
+    self.genVBOs()
     glPushMatrix()
     glTranslatef(-self.dataPlane.width/2.0, -self.dataPlane.height/2.0, 0)
 
@@ -100,6 +107,7 @@ class Simulation(frame.Frame):
     self.physicsThread.car.drawCar()
 
   def draw(self):
+    lol = time.time()
     self.preGL()
     
     self.drawCar()
@@ -115,15 +123,33 @@ class Simulation(frame.Frame):
           self.upload = False
 
     self.menu.draw()
+    self.menu.postGL()
 
   def timerFired(self, value):
-    if(not(self.dataSource.graphicsQueue.empty())):
-      self.dataPlane = self.dataSource.graphicsQueue.get()
+    if(time.time() - self.timeFromLastUpdate >= Simulation.planeUpdateDelay):
+      if(not(self.dataSource.graphicsQueue.empty())):
+        self.dataPlane = self.dataSource.graphicsQueue.get()
+        self.update = True
+        self.timeFromLastUpdate = time.time()
+      self.physicsThread.update()
 
   def mouse(self, mouseButton, buttonState, x, y):
     if(buttonState == GLUT_DOWN):
       self.menu.mouse(mouseButton, buttonState, x, y)
       self.buttonsPressed = map(lambda x : x.ref, self.menu.buttonEvents)
+      
+      if(Simulation.HOME in self.buttonsPressed):
+        self.pause(True)
+        self.dispRef.currentFrame = menus.MainMenu(self.dispRef, self.frameSize)
+      if(Simulation.UPLOAD in self.buttonsPressed):
+        if(not(self.upload)):
+          self.upload = True
+      if(Simulation.PAUSE in self.buttonsPressed):
+        self.pause(not(self.paused))
+        if(self.paused):
+          self.pauseButton.setTexture(Simulation.UNPAUSE_TEX)
+        else:
+          self.pauseButton.setTexture(Simulation.PAUSE_TEX)
 
   def keyboard(self, key, x, y):
     self.eyeRoll += -(key == "d") + (key == "a")
@@ -140,11 +166,19 @@ class Simulation(frame.Frame):
     self.paused = state
     self.physicsThread.paused = self.paused
 
+  def stop(self):
+    try:
+      self.physicsThread.stop()
+    except: pass
+    try:
+      self.dataSource.terminate()
+    except: pass
+
   def setup(self, dataSource):
     self.dataSource = converter.Converter(dataSource)
     self.dataSource.start()
 
-    while(not(self.dataSource.ready)): pass
+    while(self.dataSource.graphicsQueue.empty()): pass
 
     self.physicsThread = engine.Engine(self.dataSource.physicsQueue)
     self.physicsThread.start()
@@ -158,6 +192,11 @@ class Simulation(frame.Frame):
     self.eyeY = 0
     self.eyeZ = self.dataPlane.minVal + 10
     self.eyeRoll = self.eyePitch = self.eyeYaw = 0
+    
+    self.setuped = True
+    self.update = True
+    self.timeFromLastUpdate = time.time()
+    self.pause(False)
 
   def __init__(self, dispRef, frameSize, mapDir):
     super(Simulation, self).__init__(dispRef, frameSize)
@@ -165,15 +204,23 @@ class Simulation(frame.Frame):
     self.dataPlane = None
     self.car = None
     self.update = True
+    self.setuped = False
     self.planePresent = True
     self.paused = True
     self.upload = False
     self.upThread = None
 
-    # Pic-widths = 50x50
-    self.homeButton = buttons.TexturedButton(30, self.height - 30, 
+    picWidth = 50
+    offset = 30
+    self.homeButton = buttons.TexturedButton(offset, self.frameHeight - offset, 
                                                Simulation.HOME, "home.png")
-    self.uploadButton = buttons.TexturedButton(80, self.height-30,
+    self.uploadButton = buttons.TexturedButton(picWidth + offset, 
+                                               self.frameHeight - offset,
                                                Simulation.UPLOAD, "upload3.png")
-    self.menu = menu.Menu(self.frameSize, [self.homeButton, self.uploadButton])
+    self.pauseButton = buttons.TexturedButton(2*picWidth + offset,
+                                               self.frameHeight - offset,
+                                               Simulation.PAUSE, 
+                                               Simulation.PAUSE_TEX)
+    self.menu = menu.Menu(self.dispRef, self.frameSize, 
+                          [self.homeButton,self.uploadButton,self.pauseButton])
     self.buttonsPressed = []

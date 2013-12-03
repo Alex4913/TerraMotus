@@ -27,4 +27,4 @@ class Frame(object):
 
   def __init__(self, displayRef, frameSize):
     self.dispRef = displayRef
-    (self.width, self.height) = self.frameSize = frameSize
+    (self.frameWidth, self.frameHeight) = self.frameSize = frameSize

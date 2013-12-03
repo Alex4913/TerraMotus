@@ -40,7 +40,7 @@ class MainMenu(frame.Frame):
     self.clearColor = (.5, .5, .5, 1)
     self.defaultColor = (1.0, 1.0, 1.0)
 
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     dx = 110
     dy = 75
     objs  = [shapes.Texture(cx, cy, "background.png"),
@@ -58,7 +58,8 @@ class ChooseInput(frame.Frame):
 
   KINECT = 1
   CSV = 2
-  HOME = 3
+  RESUME = 3
+  HOME = 4
 
   def draw(self):
     self.preGL()
@@ -73,25 +74,41 @@ class ChooseInput(frame.Frame):
       
       if(ChooseInput.KINECT in self.buttonsPressed):
           self.dispRef.sim.setup(sources.KinectSource())
-          self.dispRef.currentFrame=loading.Loading(self.dispRef,self.frameSize)
+          self.dispRef.currentFrame = self.dispRef.sim
       elif(ChooseInput.CSV in self.buttonsPressed):
         self.dispRef.currentFrame = ChooseCSV(self.dispRef, self.frameSize)
-        
+      elif(ChooseInput.RESUME in self.buttonsPressed):
+        self.dispRef.sim.pause(False)
+        self.dispRef.currentFrame = self.dispRef.sim
+      elif(ChooseInput.HOME in self.buttonsPressed):
+        self.dispRef.currentFrame = MainMenu(self.dispRef, self.frameSize)
 
   def __init__(self, dispRef, frameSize):
     super(ChooseInput, self).__init__(dispRef, frameSize)
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
-    dx = 110
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
+    dx2 = 110
+    dx3 = 210
     offset = 30
 
     objs = [shapes.Texture(cx, cy, "background.png")]
     if(not(sources.KinectSource().detect())):
-      objs += [buttons.TexturedButton(cx,cy,ChooseInput.CSV,"csv.png")]
+      if(self.dispRef.sim.setuped):
+       objs+=[buttons.TexturedButton(cx-dx2, cy, ChooseInput.CSV, "csv.png"),
+              buttons.TexturedButton(cx+dx2,cy,ChooseInput.RESUME,"resume.png")]
+      else:
+       objs += [buttons.TexturedButton(cx,cy,ChooseInput.CSV,"csv.png")]
     else:
-      objs += [buttons.TexturedButton(cx-dx,cy,ChooseInput.KINECT,"kinect.png"),
-               buttons.TexturedButton(cx + dx, cy, ChooseInput.CSV, "csv.png"),
-               buttons.TexturedButton(offset, self.height - offset,
-                                        ChooseInput.HOME, "home.png")]
+      if(self.dispRef.sim.setuped):
+       objs+=[buttons.TexturedButton(cx-dx3,cy,ChooseInput.KINECT,"kinect.png"),
+              buttons.TexturedButton(cx, cy, ChooseInput.CSV, "csv.png"),
+              buttons.TexturedButton(cx+dx3,cy,ChooseInput.RESUME,"resume.png")]
+      else:
+       objs+=[buttons.TexturedButton(cx-dx2,cy,ChooseInput.KINECT,"kinect.png"),
+              buttons.TexturedButton(cx + dx2, cy, ChooseInput.CSV, "csv.png")]
+ 
+
+    objs += [buttons.TexturedButton(offset, self.frameHeight - offset,
+                                      ChooseInput.HOME, "home.png")]
  
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
 
@@ -121,10 +138,10 @@ class AboutMenu(frame.Frame):
     super(AboutMenu, self).__init__(dispRef, frameSize)
     offset = 30
 
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     objs = [shapes.Texture(cx, cy, "background.png"),
-            buttons.TexturedButton(offset, self.height - offset, AboutMenu.HOME,
-              "home.png"),
+            buttons.TexturedButton(offset, self.frameHeight - offset,
+              AboutMenu.HOME, "home.png"),
             shapes.Texture(cx, cy, "info.png")]
 
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
@@ -158,9 +175,9 @@ class ChooseCSV(frame.Frame):
     borderColor = (0 ,0, 0)
     rHeight, rWidth = (50, 700)
 
-    section = (float(self.height) / self.shown)
+    section = (float(self.frameHeight) / self.shown)
     path = self.availableCSVs[(num + self.start) % len(self.availableCSVs)]
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
 
     return [buttons.RectangleButton(cx, num*section+section/2.0,rHeight,rWidth, 
               (num + self.start) % len(self.availableCSVs), path),
@@ -203,11 +220,11 @@ class ChooseCSV(frame.Frame):
     self.visible = []
     self.availableCSVs = sorted(os.listdir(self.dispRef.mapDir))
 
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     objs = [shapes.Texture(cx, cy, "background.png"),
-            #buttons.TriangleButton(self.width - offset, cy - offset, 
-            buttons.TexturedButton(offset,self.height - offset, ChooseCSV.HOME,
-              "home.png")]
+            #buttons.TriangleButton(self.frameWidth - offset, cy - offset, 
+            buttons.TexturedButton(offset, self.frameHeight - offset,
+              ChooseCSV.HOME, "home.png")]
 
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
 
@@ -242,9 +259,9 @@ class DownloadMap(frame.Frame):
     borderColor = (0 ,0, 0)
     rHeight, rWidth = (50, 700)
 
-    section = (float(self.height) / self.shown)
+    section = (float(self.frameHeight) / self.shown)
     path = self.availableCSVs[(num + self.start) % len(self.availableCSVs)]
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
 
     return [buttons.RectangleButton(cx, num*section+section/2.0,rHeight,rWidth, 
               (num + self.start) % len(self.availableCSVs), path),
@@ -287,11 +304,11 @@ class DownloadMap(frame.Frame):
     self.visible = []
     self.availableCSVs = sorted(os.listdir(self.dispRef.mapDir))
 
-    (cx, cy) = (self.width / 2.0, self.height / 2.0)
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     objs = [shapes.Texture(cx, cy, "background.png"),
-            #buttons.TriangleButton(self.width - offset, cy - offset, 
-            buttons.TexturedButton(offset,self.height - offset, ChooseCSV.HOME,
-              "home.png")]
+            #buttons.TriangleButton(self.frameWidth - offset, cy - offset, 
+            buttons.TexturedButton(offset,self.frameHeight - offset,
+              ChooseCSV.HOME, "home.png")]
 
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
     self.downloadThread = downloadThread.Worker(self.dispRef)
