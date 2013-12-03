@@ -30,6 +30,14 @@ class Engine(threading.Thread):
       joint = ode.ContactJoint(world, contactGroup, contact)
       joint.attach(obj1.getBody(), obj2.getBody())
   
+  def buildTrimesh(self):
+    meshData = ode.TriMeshData()
+    meshData.build(self.dataPlane.toVBO(),
+                     self.dataPlane.toODETrimeshIndexes())
+    self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
+    self.ground.setPosition((-self.dataPlane.width / 2.0, 
+                             -self.dataPlane.height / 2.0, 0))
+
   def initODE(self):
     self.world = ode.World()
     self.world.setGravity((0, 0, -9.81))
@@ -37,16 +45,15 @@ class Engine(threading.Thread):
     self.world.setCFM(1E-5)
   
     self.collisionSpace = ode.Space()
-  
-    meshData = ode.TriMeshData()
-    meshData.build(self.dataPlane.toVBO(), #toRawVertices(),
-                     self.dataPlane.toODETrimeshIndexes())#self.dataPlane.toTriangleIndexes())
-    self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
-    self.ground.setPosition((-self.dataPlane.width / 2.0, 
-                             -self.dataPlane.height / 2.0, 0))
+    self.buildTrimesh()
   
     self.contacts = ode.JointGroup() 
     self.car = car.Car(self.world, self.collisionSpace)
+
+  def update(self):
+    newData = self.getDepthData()
+    if(newData is not None):
+      self.buildTrimesh()
 
   def createSphere(self, world, collisionSpace, x, y, z, r, mass):
     sphereBody = ode.Body(world)

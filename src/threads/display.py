@@ -3,11 +3,9 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 import numpy
+import freenect
 
-import time
-import math
-
-from src.threads.resources import buttons
+from src.threads import sources
 from src.threads.frames import sim, menus
 
 class Worker(object):
@@ -52,6 +50,7 @@ class Worker(object):
 
   def close(self):
     freenect.sync_stop()
+    self.sim.stop()
 
   def runGL(self):
     glutInit()
