@@ -31,11 +31,6 @@ class Menu(frame.Frame):
     for obj in self.objects:
       obj.draw()
 
-    self.postGL()
-
-  def timerFired(self, value):
-    pass
-
   def mouse(self, mouseButton, mouseState, x, y):
     pushed = []
     for obj in self.objects:
@@ -45,13 +40,7 @@ class Menu(frame.Frame):
 
     self.buttonEvents = pushed
 
-  def keyboard(self, key, x, y):
-    pass
-
-  def specialKeys(self, key, x, y):
-    pass
-
-  def __init__(self, frameSize, objects = []):
-    super(Menu, self).__init__(frameSize)
+  def __init__(self, dispRef, frameSize, objects = []):
+    super(Menu, self).__init__(dispRef, frameSize)
     self.objects = objects
     self.buttonEvents = []

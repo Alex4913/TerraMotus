@@ -3,6 +3,8 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import ode
 
+from src.threads.resources import objects
+
 class Car(object):
   def __init__(self, world, collisionSpace):
     self.world = world
@@ -11,7 +13,7 @@ class Car(object):
     self.wheelRadius = 1
     self.wheelHeight = 0.5
     self.bodyMass = 1.0
-    self.wheelMass = 0.05
+    self.wheelMass = 0.05*100
     self.deceleration = 0.001
 
     self.wheelSpeed = 0
@@ -31,13 +33,13 @@ class Car(object):
     body = ode.Body(self.world)
 
     M = ode.Mass()
-    M.setSphereTotal(self.wheelMass, self.wheelRadius)
+    M.setCylinderTotal(self.wheelMass, 1, self.wheelRadius, self.wheelHeight)
     M.mass = self.wheelMass
 
     body.setMass(M)
     body.setPosition((x, y, z))
 
-    geom=ode.GeomSphere(self.collisionSpace,self.wheelRadius)
+    geom=ode.GeomCylinder(self.collisionSpace,self.wheelRadius,self.wheelHeight)
     geom.setBody(body)
 
     return (body, geom, front)
@@ -58,53 +60,27 @@ class Car(object):
     return (body, geom)
 
   def createCar(self):
-    for wheel in xrange(1):
-      for j in xrange(1):
-        self.wheels += [self.createWheel(wheel*2, j*2, 5)]
-#    self.carBody = self.createBody(0, 0, 5)
+    for wheel in xrange(4):
+      self.wheels += [self.createWheel(0, wheel - 2 , 10 + 5*wheel)]
 
-  def setTransform(self, pos, R):
-    trans = [0.0] * 16
-    trans[ 0] = R[0] #0
-    trans[ 1] = R[3] #3
-    trans[ 2] = R[6] #6
-    trans[ 3] = 0
-    trans[ 4] = R[1] #1
-    trans[ 5] = R[4] #4
-    trans[ 6] = R[7] #7
-    trans[ 7] = 0
-    trans[ 8] = R[2] #2
-    trans[ 9] = R[5] #5
-    trans[10] = R[8] #8
-    trans[11] = 0
-    trans[12] = pos[0]
-    trans[13] = pos[1]
-    trans[14] = pos[2]
-    trans[15] = 1
-    glMultMatrixf(trans)
+    self.carBody = self.createBody(0, 0, 5)
 
   def drawWheels(self):
     slices = 20
     for (body, geom, front) in self.wheels:
       (r, h) = (self.wheelRadius, self.wheelHeight)
-
-      glPushMatrix()
-      self.setTransform(body.getPosition(), geom.getRotation())
-      glColor3f(*self.wheelColor)
-      gluSphere(gluNewQuadric(), r, slices, slices) 
-      glPopMatrix()
+      objects.Cylinder(body.getPosition(), r, h, geom.getRotation(),
+                         self.wheelColor).draw()
 
   def drawBody(self):
     (body, geom) = self.carBody
-    glPushMatrix()
-    self.setTransform(body.getPosition(), geom.getRotation())
-    glColor3f(*self.carBodyColor)
-    gluCylinder(gluNewQuadric(), 2, 2, 2, 20, 20) 
-    glPopMatrix()
-    
+    (l, w, h) = self.bodyDimensions
+    objects.Box(body.getPosition(), self.bodyDimensions, geom.getRotation(),
+                  self.carBodyColor).draw()
+ 
   def drawCar(self):
     self.setWheelSpeed(self.wheelSpeed - self.deceleration)
-#    self.drawBody()
+    self.drawBody()
     self.drawWheels()
 
   def createJoints(self):

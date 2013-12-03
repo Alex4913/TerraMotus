@@ -165,13 +165,15 @@ class Triangle(Shape2D):
     glPopMatrix()
 
 class Texture(Shape2D):
+  imageDir = "resources"
+  
   def __init__(self, x, y, path, spin = 0, borderColor = None,
                borderWidth = 1):
     self.spin = spin
     self.borderColor = borderColor
     self.borderWidth = borderWidth
     
-    self.loadImage(path)
+    self.loadImage(Texture.imageDir + "/" + path)
     super(Texture, self).__init__(x, y, (0, 0, 0))
 
   def loadImage(self, path):
