@@ -5,6 +5,7 @@ class Client(object):
 
   def __init__(self, mapDir = "", imageDir = ""):
     self.mapDir = mapDir
+    self.imageDir = imageDir
 
   def send(self, name):
     path = self.mapDir + "/" if(self.mapDir) else ""
@@ -33,6 +34,24 @@ class Client(object):
     f.close()
 
     return (filename, data)
+
+  def removeExtension(self, name):
+    return name[:len(name) - 4]
+
+  def toImgPath(self, name):
+    return "images/" + self.removeExtension(name)
+
+  def getImg(self, name):
+    r = requests.get(Client.url + "/" + self.toImgPath(name), stream=True)
+    path = self.imageDir + "/" if(self.imageDir) else ""
+    path += self.removeExtension(name) + ".png"
+    f = open(path, "w+")
+    for data in r.iter_content(chunk_size = 1024):
+      if(data):
+        f.write(data)
+        f.flush()
+
+    f.close()
 
   def getList(self, args = None):
     if(args is None): args = "empty"

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2.7
 import sys
 import time
 
@@ -9,7 +9,8 @@ from src.tools import plane
 ###                             Thread Init                                 ###
 ###############################################################################
 
-PLANE = "tilt"
+PLANE = "tilt.csv"
+MAPDIR = "maps"
 
 # Simple method to both print and append to a log file (with timestamp)
 def log(message):
@@ -21,9 +22,8 @@ def log(message):
   f.close()
 
 def initCSVReader():
-  mapDir = "maps"
   log("Emulating Kinect with CSVReader Thread")
-  instance = csvreader.Worker(mapDir)
+  instance = csvreader.Worker(MAPDIR)
   instance.setPlaneName(PLANE)
 
   if(not(instance.fileExists)):
@@ -103,10 +103,16 @@ def init(args):
   return (dataThread, physicsThread)
 
 def main():
-  (dataThread, physicsThread) = init(sys.argv)
+  #(dataThread, physicsThread) = init(sys.argv)
+  if(("--help" in sys.argv) or ("-h" in sys.argv)):
+    print "Usage:", sys.argv[0], "[options]"
+    print "\t-h, --help\tPrint help information"
+    print "\t-nk, --no-kinect\tSkip looking for a Kinect"
+    exit()
+
+  drawLogo()
 
   log("Starting display")
-  display.Worker(dataThread, physicsThread)
-  log("Exiting")
+  display.Worker(sys.argv)
 
 if(__name__ == "__main__"): main()
