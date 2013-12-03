@@ -4,13 +4,11 @@ from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 import numpy
 
-import freenect
-
 import time
 import math
 
 from src.threads.resources import buttons
-from src.threads.frames import sim, main, loading
+from src.threads.frames import sim, menus
 
 class Worker(object):
   frameName = "-= TerraMotus =-"
@@ -31,32 +29,11 @@ class Worker(object):
   
   def timerFired(self, value):
     self.currentFrame.timerFired(value)
-
-  def parseMainButtons(self):
-    if(main.MainMenu.PLAY in self.main.buttonsPressed):
-      self.sim.pause(False)
-      self.currentFrame = self.sim
-    elif(main.MainMenu.DOWNLOAD in self.main.buttonsPressed):
-      print "Download Menu!"
-    elif(main.MainMenu.ABOUT in self.main.buttonsPressed):
-      print "About Menu!"
-      
-
-  def parseSimButtons(self):
-    if(sim.Simulation.HOME in self.sim.buttonsPressed):
-      self.sim.pause(True)
-      self.currentFrame = self.main
-    elif(sim.Simulation.UPLOAD in self.sim.buttonsPressed):
-      print "Upload Interface!"
-
-  def parseButtonPress(self):
-    if(self.currentFrame == self.main): self.parseMainButtons()
-    elif(self.currentFrame == self.sim): self.parseSimButtons()
+    glutTimerFunc(Worker.updateDelay, self.timerFired, value)
 
   def mouse(self, mouseButton, buttonState, x, y):
     if(buttonState == GLUT_DOWN):
       self.currentFrame.mouse(mouseButton, buttonState, x, y)
-      self.parseButtonPress()
 
   def keyboard(self, key, x, y):
     self.currentFrame.keyboard(key, x, y)
@@ -69,12 +46,16 @@ class Worker(object):
     self.currentFrame.draw()
     self.postGL()
 
+  def reshape(self, width, height):
+    if(self.width != width or self.height != height):
+      glutReshapeWindow(self.width, self.height)
+
   def close(self):
     freenect.sync_stop()
 
   def runGL(self):
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB)
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(*Worker.frameSize)
     glutCreateWindow(Worker.frameName)
   
@@ -84,18 +65,21 @@ class Worker(object):
     glutMouseFunc(self.mouse)
     glutKeyboardFunc(self.keyboard)
     glutSpecialFunc(self.specialKeys)
-    glutCloseFunc(self.close)
+    glutReshapeFunc(self.reshape)
+
+    try:
+      glutCloseFunc(self.close)
+    except:
+      glutWMCloseFunc(self.close)
 
     # Blocks
     glutMainLoop()
    
-  def __init__(self, dataThread, physicsThread):
-    self.dataThread = dataThread
-    self.physicsThread = physicsThread
-
-    self.sim = sim.Simulation(Worker.frameSize, dataThread, physicsThread)
-    self.main = main.MainMenu(Worker.frameSize)
-    self.loading = loading.Loading(Worker.frameSize)
-    self.currentFrame = self.main
+  def __init__(self, args):
+    self.mapDir = "maps"
+    self.imageDir = "images"
+    self.resourceDir = "resources"
+    self.sim = sim.Simulation(self, Worker.frameSize, self.mapDir)
+    self.currentFrame = menus.MainMenu(self, Worker.frameSize)
 
     self.runGL()

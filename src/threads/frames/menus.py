@@ -47,7 +47,7 @@ class MainMenu(frame.Frame):
              buttons.TexturedButton(cx - dx, cy + dy, MainMenu.PLAY,"play.png"),
              buttons.TexturedButton(cx,cy+dy,MainMenu.DOWNLOAD,"download.png"),
              buttons.TexturedButton(cx + dx,cy + dy,MainMenu.ABOUT,"about.png"),
-             buttons.TexturedButton(cx, cy - dy, MainMenu.LOGO, "logo2.png")]
+             buttons.TexturedButton(cx, cy - dy, MainMenu.LOGO, "logo.png")]
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
 
 class ChooseInput(frame.Frame):

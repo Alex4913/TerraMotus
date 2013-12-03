@@ -7,9 +7,9 @@ class Frame(object):
   defaultColor = (1, 1, 1)
 
   def preGL(self):
-    glClearColor(*Frame.clearColor)
+    glClearColor(*self.clearColor)
     glClear(GL_COLOR_BUFFER_BIT)
-    glColor3f(*Frame.defaultColor)
+    glColor3f(*self.defaultColor)
     glLoadIdentity()
     
     glMatrixMode(GL_PROJECTION)
@@ -20,9 +20,11 @@ class Frame(object):
   def draw(self):
     self.preGL()
  
+  def timerFired(self, value): pass
+  def mouse(self, mouseButton, buttonState, x, y): pass
   def keyboard(self, key, x, y): pass
-
   def specialKeys(self, key, x, y): pass
 
-  def __init__(self, frameSize):
+  def __init__(self, displayRef, frameSize):
+    self.dispRef = displayRef
     (self.width, self.height) = self.frameSize = frameSize

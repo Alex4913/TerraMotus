@@ -3,10 +3,17 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from src.threads.resources import shapes, menu
+from src.threads.frames import frame
 
-class Loading(menu.Menu):
+class Loading(frame.Frame):
   def animateDots(self):
-    pass
+    scale = 100
+    self.animationCount %= scale
+
+    self.dotState = [(0, 0, 0)] * (self.dots)
+    for index in xrange(self.animationCount / (scale/(self.dots + 1))):
+      if(index < self.dots):
+        self.dotState[index] = (1, 1, 1)
 
   def drawDots(self):
     (cx, cy) = (self.width / 2.0, self.height / 2.0)
@@ -33,15 +40,19 @@ class Loading(menu.Menu):
     self.preGL()
     self.drawSpinning()
     self.drawDots()
-    #self.spin += 1
 
   def timerFired(self, count):
     self.spin += 1
+    self.animationCount += 1
+    self.done = self.backgroundThread.ready
 
   def mouse(self, mouseButton, buttonState, x, y): pass
 
-  def __init__(self, frameSize):
-    super(Loading, self).__init__(frameSize, [])
+  def __init__(self, displayRef, frameSize):#, backgroundThread):
+    super(Loading, self).__init__(displayRef, frameSize)
     self.spin = 0
     self.dots = 5
     self.dotState = [(0, 0, 0)] * (self.dots)
+
+#    self.backgroundThread = backgroundThread
+ #   self.backgroundThread.start()
