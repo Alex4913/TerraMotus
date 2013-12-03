@@ -1,24 +1,25 @@
-import threading
-import Queue
+import multiprocessing
+#import threading
+from multiprocessing import Queue
 import time
 import os
 
 from src.threads import sources
 from src.tools import errors, plane, optimize, filters, writer
 
-class Converter(threading.Thread):
+class Converter(multiprocessing.Process):
   errorVal = 2047.0
 
   def __init__(self, dataSource, queueMax = 3):
     self.queueMax = queueMax
-    self.physicsQueue = Queue.Queue(queueMax)
-    self.graphicsQueue = Queue.Queue(queueMax)
+    self.physicsQueue = Queue(queueMax)
+    self.graphicsQueue = Queue(queueMax)
 
     self.dataThread = dataSource
     self.error = False
     self.exit = False
     self.ready = False
-    threading.Thread.__init__(self)
+    multiprocessing.Process.__init__(self)
     self.dataThread.start()
 
   def stripExtension(self, path):
@@ -37,6 +38,7 @@ class Converter(threading.Thread):
 
   def run(self):
     self.error = self.dataThread.error
+    
     if(self.dataThread.error):
       self.stop()
 
@@ -46,14 +48,23 @@ class Converter(threading.Thread):
       if(dataPlane is None):
         continue
 
-      dataPlane = errors.averageErrors(dataPlane, Converter.errorVal)
-      dataPlane = filters.flipSurface(dataPlane)
+      if(isinstance(self.dataThread, sources.KinectSource)):
+        dataPlane = errors.averageErrors(dataPlane, Converter.errorVal)
+        dataPlane = filters.flipSurface(dataPlane)
       dataPlane = filters.averagePass(dataPlane, 2)
+      dataPlane.toVBO()
+      dataPlane.toODETrimeshIndexes()
 
       if(not(self.physicsQueue.full())): self.physicsQueue.put(dataPlane)
       if(not(self.graphicsQueue.full())): self.graphicsQueue.put(dataPlane)
       self.dataPlane = dataPlane
-      self.ready = True
+
+  def getReady(self):
+    return self.ready
+
+  def terminate(self):
+    self.stop()
+    multiprocessing.Process.terminate(self)
 
   def stop(self):
     self.dataThread.stop()

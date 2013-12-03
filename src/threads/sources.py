@@ -1,5 +1,5 @@
 import threading
-import Queue
+from multiprocessing import Queue
 import os
 
 import freenect
@@ -8,7 +8,7 @@ from src.tools import plane, parser, writer
 class DataSource(threading.Thread):
   def __init__(self, queueMax = 3):
     self.queueMax = queueMax
-    self.queue = Queue.Queue(queueMax)
+    self.queue = Queue(queueMax)
 
     self.error = False
     threading.Thread.__init__(self)
@@ -34,7 +34,6 @@ class CSVSource(DataSource):
     self.error=not(os.path.exists(self.path) and not(os.path.isdir(self.path)))
 
   def run(self):
-    print self, self.error
     if(self.error): self.stop()
 
     while(not(self.exit)):
