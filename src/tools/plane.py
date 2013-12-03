@@ -159,6 +159,17 @@ class PlaneData(object):
     self.triangleIndexes = triangles
     return triangles
 
+  def toODETrimeshIndexes(self):
+    self.vbo = self.toVBO()
+    points = range(len(self.vbo))
+
+    result = []
+    while(points != []):
+      result += [tuple(points[:3])]
+      points = points[3:]
+
+    return result
+
   def toVBO(self):
     if(self.vbo is not None):
       return self.vbo
@@ -169,7 +180,7 @@ class PlaneData(object):
     for triset in triangleIndexes:
       converted = []
       for index in triset:
-        converted += [verts[index].toOrderedPairs()]
+        converted += [(verts[index].y, verts[index].x, verts[index].z)]
 
       flattenedAndConverted += converted
 

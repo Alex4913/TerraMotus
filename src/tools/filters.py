@@ -8,7 +8,7 @@ def flipSurface(dataPlane):
     for col in xrange(dataPlane.width):
       rawData[row][col] = -rawData[row][col] + dataPlane.maxVal
 
-  return plane.PlaneData(rawData)
+  return plane.PlaneData(rawData, dataPlane.name)
 
 def sample(dataPlane, sampleStep):
   rawData = dataPlane.rawData
@@ -20,7 +20,7 @@ def sample(dataPlane, sampleStep):
 
     newData += [temp]
 
-  return plane.PlaneData(newData)
+  return plane.PlaneData(newData, dataPlane.name)
 
 def averagePass(dataPlane, passNum = 1):
   backupData = copy.deepcopy(dataPlane.rawData)
@@ -42,4 +42,4 @@ def averagePass(dataPlane, passNum = 1):
 
         backupData[row][col] = (float(sumOfNeighbors) / validNeighbors)
 
-  return plane.PlaneData(backupData)
+  return plane.PlaneData(backupData, dataPlane.name)

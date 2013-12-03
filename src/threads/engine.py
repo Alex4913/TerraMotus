@@ -6,12 +6,11 @@ import time
 
 from src.threads.resources import car
 
-class Worker(threading.Thread):
+class Engine(threading.Thread):
   UPS = 30.0
 
   def getDepthData(self):
-    if(not(self.queue.empty())):
-      self.dataPlane = self.queue.get()
+    if(not(self.queue.empty())): return self.queue.get()
 
   # Collision callback
   def near_callback(self, args, obj1, obj2):
@@ -40,8 +39,8 @@ class Worker(threading.Thread):
     self.collisionSpace = ode.Space()
   
     meshData = ode.TriMeshData()
-    meshData.build(self.dataPlane.toRawVertices(),
-                     self.dataPlane.toTriangleIndexes())
+    meshData.build(self.dataPlane.toVBO(), #toRawVertices(),
+                     self.dataPlane.toODETrimeshIndexes())#self.dataPlane.toTriangleIndexes())
     self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
     self.ground.setPosition((-self.dataPlane.width / 2.0, 
                              -self.dataPlane.height / 2.0, 0))
@@ -65,18 +64,20 @@ class Worker(threading.Thread):
     return (sphereBody, sphereGeom)
 
   def __init__(self, queue):
-    self.depthData = None
+    self.dataPlane = None
     self.car = None
     self.queue = queue
-    self.getDepthData()
+
+    while(self.dataPlane is None):
+      self.dataPlane = self.getDepthData()
 
     self.exit = False
     self.paused = True
+    self.initODE()
     threading.Thread.__init__(self)
 
   def run(self):
-    self.initODE()
-    simTimeStep = 1.0 / Worker.UPS
+    simTimeStep = 1.0 / Engine.UPS
 
     while(not(self.exit)):
       if(not(self.paused)):
