@@ -28,6 +28,8 @@ class Worker(threading.Thread):
     except:
       sent = False
 
+    while(animation.state != Animate.DEFAULT): pass
+
     animation.stop()
     animation.validTransfer(sent)
     self.done = True
@@ -44,17 +46,24 @@ class Animate(threading.Thread):
 
   def __init__(self, uploadButton):
     self.button = uploadButton
+    self.state = Animate.NO_BARS
     self.exit = False
     threading.Thread.__init__(self)
 
   def cycleButton(self):
     tstep = Animate.tstep
     dt = time.time() - self.time
-    if(dt <= tstep): self.button.setTexture(Animate.NO_BARS)
-    elif(tstep < dt <= 2*tstep): self.button.setTexture(Animate.ONE_BAR)
-    elif(2*tstep < dt <= 3*tstep): self.button.setTexture(Animate.MID_BARS)
-    elif(3*tstep < dt <= 4*tstep): self.button.setTexture(Animate.HIGH_BARS)
-    elif(4*tstep < dt <= 5*tstep): self.time = time.time()
+
+    if(dt <= tstep): self.state = Animate.NO_BARS
+    elif(tstep < dt <= 2*tstep): self.state = Animate.ONE_BAR
+    elif(2*tstep < dt <= 3*tstep): self.state = Animate.MID_BARS
+    elif(3*tstep < dt <= 4*tstep): self.state = Animate.HIGH_BARS
+    elif(4*tstep < dt <= 5*tstep):
+      self.state = Animate.NO_BARS
+      self.time = time.time()
+
+    self.button.setTexture(self.state)
+
  
   def validTransfer(self, valid):
     tstep = Animate.tstep

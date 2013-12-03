@@ -1,9 +1,8 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/python
 import sys
 import time
 
-from src.threads import kinect, csvreader, engine, display
-from src.tools import plane
+from src.threads import display
 
 ###############################################################################
 ###                             Thread Init                                 ###
