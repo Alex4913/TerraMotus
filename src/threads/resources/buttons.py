@@ -115,14 +115,21 @@ class TriangleButton(Button):
         
 class TexturedButton(RectangleButton):
   def __init__(self, x, y, ref, texturePath):
+    self.x = x
+    self.y = y
     self.texturePath = texturePath
-    self.texture = shapes.Texture(x, y, texturePath)
+    self.borderColor = None #(0, 0, 0)
+    self.borderWidth = 2
+
+    self.setTexture(texturePath)
     super(TexturedButton, self).__init__(x, y, self.texture.height, 
                                            self.texture.width, ref, "")
+
   def draw(self):
     self.texture.draw()
 
   def setTexture(self, path):
-    self.texture = shapes.Texture(self.x, self.y, path)
+    self.texture = shapes.Texture(self.x, self.y, path, 0, self.borderColor,
+                                    self.borderWidth)
     self.height = self.texture.height
     self.width = self.texture.width

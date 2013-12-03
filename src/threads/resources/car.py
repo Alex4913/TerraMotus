@@ -29,6 +29,20 @@ class Car(object):
     self.carBody = None
     self.createCar()
 
+  def rotateBody(self, body, (c, s, t), (x, y, z)):
+    rotMatrix = [0] * 9
+    rotMatrix[0] = t*(x**2) + c
+    rotMatrix[1] = t*x*y - s*z
+    rotMatrix[2] = t*x*z + s*y
+    rotMatrix[3] = t*x*y + s*z
+    rotMatrix[4] = t*(y**2) + c
+    rotMatrix[5] = t*y*z - s*x
+    rotMatrix[6] = t*x*z - s*x
+    rotMatrix[7] = t*y*x + s*x
+    rotMatrix[8] = t*(z**2) + c
+    body.setRotation(rotMatrix)
+
+
   def createWheel(self, x, y, z, front = False):
     body = ode.Body(self.world)
 
@@ -38,6 +52,7 @@ class Car(object):
 
     body.setMass(M)
     body.setPosition((x, y, z))
+    self.rotateBody(body, (1, 0, 0), (1, 0, 0))
 
     geom=ode.GeomCylinder(self.collisionSpace,self.wheelRadius,self.wheelHeight)
     geom.setBody(body)

@@ -173,6 +173,7 @@ class Texture(Shape2D):
     self.borderColor = borderColor
     self.borderWidth = borderWidth
     
+    self.ID = None
     self.loadImage(Texture.imageDir + "/" + path)
     super(Texture, self).__init__(x, y, (0, 0, 0))
 
@@ -181,6 +182,8 @@ class Texture(Shape2D):
     (self.width, self.height) = self.image.size
 
   def loadTexture(self):
+    if(self.ID is not None): return self.ID
+
     try:
       data = self.image.tostring("raw", "RGBA", 0, -1)
     except SystemError:
@@ -198,6 +201,7 @@ class Texture(Shape2D):
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA,
                    GL_UNSIGNED_BYTE, data)
     # return the ID for use
+    self.ID = ID
     return ID
 
   def setupTexture(self , ID):
@@ -254,7 +258,7 @@ class Texture(Shape2D):
 
     glEnd()
     glDisable(GL_TEXTURE_2D)
-    glDisable(GL_TEXTURE_2D)
+    #glDisable(GL_TEXTURE_2D)
     #glPushMatrix()
     #glDisable(GL_BLEND)
   

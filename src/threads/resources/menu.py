@@ -13,8 +13,8 @@ class Menu(frame.Frame):
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity() 
-    glViewport(0, 0, self.width, self.height)
-    glOrtho(0, self.width, self.height, 0, 0, 1)
+    glViewport(0, 0, self.frameWidth, self.frameHeight)
+    glOrtho(0, self.frameWidth, self.frameHeight, 0, 0, 1)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
