@@ -7,7 +7,7 @@ import time
 from src.threads.resources import car
 
 class Engine(threading.Thread):
-  UPS = 30.0
+  UPS = 24.0
 
   def getDepthData(self):
     if(not(self.queue.empty())): return self.queue.get()
@@ -40,7 +40,7 @@ class Engine(threading.Thread):
 
   def makeCar(self):
     self.car.createCar(0,0,self.dataPlane.getPoint(self.dataPlane.width/2, 
-      self.dataPlane.height/2).z + 10)
+      self.dataPlane.height/2).z + self.car.rescueOffset)
 
   def initODE(self):
     self.world = ode.World()

@@ -120,6 +120,8 @@ class Simulation(frame.Frame):
   def timerFired(self, value):
     (_, _, z) = self.physicsThread.car.getPos()
     if(z <= self.dataPlane.minVal):
+      self.physicsThread.car.setWheelSpeed(0)
+      self.physicsThread.car.setFrontWheelTurn(0)
       self.physicsThread.makeCar()
 
     if(time.time() - self.timeFromLastUpdate >= Simulation.planeUpdateDelay):
@@ -153,9 +155,9 @@ class Simulation(frame.Frame):
     elif(key == "s"):
       self.physicsThread.car.accelerate(-car.Car.acc)
     elif(key == "a"):
-      self.physicsThread.car.setFrontWheelTurn(-.25)
+      self.physicsThread.car.setFrontWheelTurn(-self.turnInc)
     elif(key == "d"):
-      self.physicsThread.car.setFrontWheelTurn(.25)
+      self.physicsThread.car.setFrontWheelTurn(self.turnInc)
     elif(key == " "):
       self.physicsThread.car.setWheelSpeed(0)
       self.physicsThread.car.setFrontWheelTurn(0)
@@ -193,11 +195,8 @@ class Simulation(frame.Frame):
     if(isinstance(dataSource, sources.CSVSource)): pass
     self.dataSource.terminate()
 
-    self.eyeX = -self.dataPlane.width/2.0
-    self.eyeY = 0
-    self.eyeZ = self.dataPlane.maxVal + 10
-    self.eyeRoll = self.eyePitch = self.eyeYaw = 0
-    
+    self.turnInc = .1
+    self.eyeX=self.eyeY=self.eyeZ=self.eyeRoll=self.eyePitch=self.eyeYaw=0
     self.setuped = True
     self.update = True
     self.timeFromLastUpdate = time.time()

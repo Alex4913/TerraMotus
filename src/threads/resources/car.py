@@ -27,7 +27,7 @@ class Car(object):
     
     self.maxForce = 100
     self.speedCutOff = 100
-    self.rescueOffset = 10
+    self.rescueOffset = 5
 
     #                      l, w, h
     self.bodyDimensions = (5.0, 4.0, 3.0)
@@ -173,7 +173,7 @@ class Car(object):
       error = max(-self.steerRange, error)
       error = min(self.steerRange, error)
 
-      self.frontJoints[joint].setParam(ode.ParamVel, 2*error)
+      self.frontJoints[joint].setParam(ode.ParamVel, 10*error)
       self.frontJoints[joint].setParam(ode.ParamFMax, self.maxForce)
       self.frontJoints[joint].setParam(ode.ParamLoStop, -self.steerRange)
       self.frontJoints[joint].setParam(ode.ParamHiStop, self.steerRange)
