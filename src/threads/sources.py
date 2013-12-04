@@ -2,11 +2,13 @@ import threading
 from multiprocessing import Queue
 import os
 
+import time
+
 import freenect
 from src.tools import plane, parser, writer
 
 class DataSource(threading.Thread):
-  def __init__(self, queueMax = 3):
+  def __init__(self, queueMax = 1):
     self.queueMax = queueMax
     self.queue = Queue(queueMax)
 
@@ -20,7 +22,7 @@ class DataSource(threading.Thread):
     if(not(self.queue.empty())): return self.queue.get()
 
 class CSVSource(DataSource):
-  def __init__(self, name, mapDir = "", queueMax = 3):
+  def __init__(self, name, mapDir = "", queueMax = 1):
     super(CSVSource, self).__init__(queueMax)
     self.mapDir = mapDir
     self.name = name
@@ -37,16 +39,19 @@ class CSVSource(DataSource):
     if(self.error): self.stop()
 
     while(not(self.exit)):
-      data = plane.PlaneData(parser.parse(self.path), self.name)
-      self.add(data)
+      try:
+        data = plane.PlaneData(parser.parse(self.path), self.name)
+        self.add(data)
+      except:
+        continue
      
   def stop(self):
     self.exit = True
 
 class KinectSource(DataSource):
-  name = "kinect-data"
+  name = "kinect-data-%d.csv" % (int(time.time()))
 
-  def __init__(self, queueMax = 3):
+  def __init__(self, queueMax = 1):
     super(KinectSource, self).__init__(queueMax)
     self.exit = False
 

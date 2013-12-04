@@ -10,12 +10,13 @@ from src.tools import errors, plane, optimize, filters, writer
 class Converter(multiprocessing.Process):
   errorVal = 2047.0
 
-  def __init__(self, dataSource, queueMax = 3):
+  def __init__(self, dataSource, mapDir = "", queueMax = 1):
     self.queueMax = queueMax
     self.physicsQueue = Queue(queueMax)
     self.graphicsQueue = Queue(queueMax)
 
     self.dataThread = dataSource
+    self.mapDir = mapDir
     self.error = False
     self.exit = False
     self.ready = False
@@ -49,15 +50,18 @@ class Converter(multiprocessing.Process):
         continue
 
       if(isinstance(self.dataThread, sources.KinectSource)):
+        print "Errors"
         dataPlane = errors.averageErrors(dataPlane, Converter.errorVal)
+        print "Flip"
         dataPlane = filters.flipSurface(dataPlane)
+      print "Average"
       dataPlane = filters.averagePass(dataPlane, 2)
-      dataPlane.toVBO()
-      dataPlane.toODETrimeshIndexes()
+      print "Done"
 
       if(not(self.physicsQueue.full())): self.physicsQueue.put(dataPlane)
       if(not(self.graphicsQueue.full())): self.graphicsQueue.put(dataPlane)
-      self.dataPlane = dataPlane
+      self.export(dataPlane)
+      self.stop()
 
   def getReady(self):
     return self.ready
@@ -70,6 +74,6 @@ class Converter(multiprocessing.Process):
     self.dataThread.stop()
     self.exit = True
 
-  def export(self):
-    path = self.getOutPath(self.dataPlane.name)
-    writer.writePlaneToFile(self.dataPlane, path)
+  def export(self, dataPlane):
+    path = self.getOutPath(dataPlane.name)
+    writer.writePlaneToFile(dataPlane, path)
