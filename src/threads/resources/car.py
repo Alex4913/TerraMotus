@@ -3,21 +3,31 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import ode
 
+import math
+
 from src.threads.resources import objects
 
 class Car(object):
+  acc = 0.5
+
   def __init__(self, world, collisionSpace):
     self.world = world
     self.collisionSpace = collisionSpace
+    self.jointGroup = 0
 
-    self.wheelRadius = 1
-    self.wheelHeight = 0.5
-    self.bodyMass = 1.0
-    self.wheelMass = 0.05*100
-    self.deceleration = 0.001
+    self.wheelRadius = 1.25
+    self.wheelHeight = 0.65
+    self.bodyMass = 5
+    self.wheelMass = 0.1
+    self.deceleration = 0.01
 
     self.wheelSpeed = 0
-    self.speedCutOff = 10
+    self.wheelTurn = 0
+    self.steerRange = .75
+    
+    self.maxForce = 100
+    self.speedCutOff = 100
+    self.rescueOffset = 10
 
     #                      l, w, h
     self.bodyDimensions = (5.0, 4.0, 3.0)
@@ -27,24 +37,49 @@ class Car(object):
 
     self.wheels = []
     self.carBody = None
-    self.createCar()
 
-  def rotateBody(self, body, (c, s, t), (x, y, z)):
-    rotMatrix = [0] * 9
-    rotMatrix[0] = t*(x**2) + c
-    rotMatrix[1] = t*x*y - s*z
-    rotMatrix[2] = t*x*z + s*y
-    rotMatrix[3] = t*x*y + s*z
-    rotMatrix[4] = t*(y**2) + c
-    rotMatrix[5] = t*y*z - s*x
-    rotMatrix[6] = t*x*z - s*x
-    rotMatrix[7] = t*y*x + s*x
-    rotMatrix[8] = t*(z**2) + c
-    body.setRotation(rotMatrix)
+  def quatFromAxisAndAngle(self, ax, ay, az, angle):
+    quaternion = [0.0] * 4
+    l = ax**2 + ay**2 + az**2
+    if(l > 0.0):
+      angle *= 0.5
+      quaternion[0] = math.cos(angle)
+      l = math.sin(angle) * 1.0/(l**0.5)
+      quaternion[1] = ax * l
+      quaternion[2] = ay * l
+      quaternion[3] = az * l
+    else:
+      quaternion = [1.0, 0, 0, 0]
 
+    return quaternion
+
+  def quatToRotMatrix(self, quaternion):
+    rot = [0.0] * 9
+    qp1 = 2 * quaternion[1]**2
+    qp2 = 2 * quaternion[2]**2
+    qp3 = 2 * quaternion[3]**2
+
+    rot[0] = 1 - qp2 - qp3
+    rot[1] = 2 * (quaternion[1]*quaternion[2] - quaternion[0]*quaternion[3])
+    rot[2] = 2 * (quaternion[1]*quaternion[3] - quaternion[0]*quaternion[2])
+
+    rot[3] = 2 * (quaternion[1]*quaternion[2] - quaternion[0]*quaternion[3])
+    rot[4] = 1 - qp1 - qp3
+    rot[5] = 2 * (quaternion[2]*quaternion[3] - quaternion[0]*quaternion[1]) 
+
+    rot[6] = 2 * (quaternion[1]*quaternion[3] - quaternion[0]*quaternion[2])
+    rot[7] = 2 * (quaternion[2]*quaternion[3] - quaternion[0]*quaternion[1])
+    rot[8] = 1 - qp1 - qp2
+
+    return rot
+
+  def rotMatrixFromAxisAndAngle(self, ax, ay, az, angle):
+    quaternion = quatFromAxisAndAngle(ax, ay, az, angle)
+    return quatToRotMatrix(quaternion)
 
   def createWheel(self, x, y, z, front = False):
     body = ode.Body(self.world)
+    body.setQuaternion(self.quatFromAxisAndAngle(1, 0, 0, math.pi * 0.5))
 
     M = ode.Mass()
     M.setCylinderTotal(self.wheelMass, 1, self.wheelRadius, self.wheelHeight)
@@ -52,7 +87,6 @@ class Car(object):
 
     body.setMass(M)
     body.setPosition((x, y, z))
-    self.rotateBody(body, (1, 0, 0), (1, 0, 0))
 
     geom=ode.GeomCylinder(self.collisionSpace,self.wheelRadius,self.wheelHeight)
     geom.setBody(body)
@@ -74,11 +108,17 @@ class Car(object):
     geom.setBody(body)
     return (body, geom)
 
-  def createCar(self):
-    for wheel in xrange(4):
-      self.wheels += [self.createWheel(0, wheel - 2 , 10 + 5*wheel)]
+  def createCar(self, cx = 0, cy = 0, cz = 5):
+    (l, w, h) = self.bodyDimensions
+    (hl, hw, hh) = (1.3*l/2.0, w/2.0, h/2.0)
 
-    self.carBody = self.createBody(0, 0, 5)
+    self.wheels = [self.createWheel(cx + 2*hw, cy + hl, cz - hh, True),
+                   self.createWheel(cx - hw, cy + hl, cz - hh, False),
+                   self.createWheel(cx + 2*hw, cy - hl, cz - hh, True),
+                   self.createWheel(cx - hw, cy - hl, cz - hh, False)]
+
+    self.carBody = self.createBody(cx, cy, cz)
+    self.createJoints()
 
   def drawWheels(self):
     slices = 20
@@ -94,12 +134,73 @@ class Car(object):
                   self.carBodyColor).draw()
  
   def drawCar(self):
-    self.setWheelSpeed(self.wheelSpeed - self.deceleration)
     self.drawBody()
     self.drawWheels()
 
   def createJoints(self):
-    pass
+    self.frontJoints = []
+    self.backJoints = []
+    self.jointGroup = ode.JointGroup()
+    for wheel in self.wheels:
+      joint = ode.Hinge2Joint(self.world, self.jointGroup)
+      (cBody, _) = self.carBody
+      (wBody, _, front) = wheel
+      joint.attach(cBody, wBody)
+      joint.setAnchor(wBody.getPosition())
+      joint.setAxis1((0, 0, 1))
+      joint.setAxis2((0, 1, 0))
+      if(front): self.frontJoints += [joint]
+      else: self.backJoints += [joint]
+
+    suspensionERP = 2
+    suspensionCFM = 0.8
+
+    for joint in xrange(len(self.frontJoints)):
+      self.frontJoints[joint].setParam(ode.ParamSuspensionERP, suspensionERP)
+      self.frontJoints[joint].setParam(ode.ParamSuspensionCFM, suspensionCFM)
+
+    for joint in xrange(len(self.backJoints)):
+      self.backJoints[joint].setParam(ode.ParamSuspensionERP, suspensionERP)
+      self.backJoints[joint].setParam(ode.ParamSuspensionCFM, suspensionCFM)
+
+    for joint in xrange(len(self.backJoints)):
+      self.backJoints[joint].setParam(ode.ParamLoStop, 0)
+      self.backJoints[joint].setParam(ode.ParamHiStop, 0)
+
+  def steer(self):
+    for joint in xrange(len(self.frontJoints)):
+      error = self.wheelTurn - self.frontJoints[joint].getAngle1()
+      error = max(-self.steerRange, error)
+      error = min(self.steerRange, error)
+
+      self.frontJoints[joint].setParam(ode.ParamVel, 2*error)
+      self.frontJoints[joint].setParam(ode.ParamFMax, self.maxForce)
+      self.frontJoints[joint].setParam(ode.ParamLoStop, -self.steerRange)
+      self.frontJoints[joint].setParam(ode.ParamHiStop, self.steerRange)
+      self.frontJoints[joint].setParam(ode.ParamFudgeFactor, 0.1)
+
+  def motor(self):
+    for jointGroup in [self.frontJoints]:#, self.backJoints]:
+      for joint in xrange(len(jointGroup)):
+        jointGroup[joint].setParam(ode.ParamVel2, -self.wheelSpeed)
+        jointGroup[joint].setParam(ode.ParamFMax2, self.maxForce) 
+
+  def simulate(self):
+    self.setWheelSpeed(self.wheelSpeed - self.deceleration)
+    self.motor()
+    self.steer()
+
+  def getPos(self):
+    (body, _) = self.carBody
+    return body.getPosition()
+
+  def getRPY(self):
+    (body, _) = self.carBody
+    R = body.getRotation()
+    roll  = math.atan2(R[7], R[8])
+    pitch = math.asin(-R[6])
+    yaw   = math.atan2(R[3], R[0])
+    return (roll, pitch, yaw)
 
   def changePosition(self, dx, dy, dz):
     for (body, _, _) in self.wheels:
@@ -109,9 +210,18 @@ class Car(object):
     (body, _) = self.carBody
     body.setPosition((x + dx, y + dy, z + dz)) 
 
+  def resetPos(self):
+    (x, y, z) = self.getPos()
+    self.createCar(x, y, z + self.rescueOffset) 
+
   def setWheelSpeed(self, speed):
     self.wheelSpeed = min(self.speedCutOff, speed)
     self.wheelSpeed = max(0, self.wheelSpeed)
 
-  def setFrontWheelTurn(self, degrees):
-    self.wheelTurn = degrees
+  def accelerate(self, acc):
+    self.setWheelSpeed(self.wheelSpeed + acc)
+
+  def setFrontWheelTurn(self, val):
+    self.wheelTurn += val
+    self.wheelTurn = max(-self.steerRange, self.wheelTurn)
+    self.wheelTurn = min(self.steerRange, self.wheelTurn)

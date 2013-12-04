@@ -9,7 +9,7 @@ import math
 
 from src.threads.resources import car, buttons, menu
 from src.threads.frames import frame, menus
-from src.threads import converter, uploadThread, engine
+from src.threads import converter, sources, uploadThread, engine
 
 class Simulation(frame.Frame):
   # World Properties
@@ -42,33 +42,21 @@ class Simulation(frame.Frame):
     gluPerspective(60, 1.5, 0.2, 1000)
     glMatrixMode(GL_MODELVIEW)
     self.setCamera(self.eyeX, self.eyeY, self.eyeZ,
-                   self.eyeRoll, self.eyePitch, self.eyeYaw)
+                   self.eyeRoll, self.eyePitch, self.eyeYaw, 30)
 
-  def setCamera(self, x, y, z, roll, pitch, yaw):
+  def setCamera(self, x, y, z, roll, pitch, yaw, r = 1):
     # Unit Circle
-    lookX = math.cos(yaw) + x
-    lookY = math.sin(yaw) + y
+    lookX = -r*math.cos(yaw) + x
+    lookY = -r*math.sin(yaw) + y
 
-    gluLookAt (x, y, z, lookX, lookY, z, 0, 0, 1)
+    gluLookAt (lookX, lookY, z, x, y, z, 0, 0, 1)
     glRotatef(roll, 1.0, 0, 0)
     glRotatef(pitch, 0, 1.0, 0)
   
-  def heightToColor(self, val):
-    valRange = self.dataPlane.maxVal - self.dataPlane.minVal
-    valScale = 1.0
-    if(valRange == 0): return [0.5 * valScale]*3
-
-    return [(float(val - self.dataPlane.minVal) / valRange) * valScale] * 3
-
   def genVBOs(self):
     if(self.update == True):
       self.vbo = vbo.VBO(numpy.array(self.dataPlane.toVBO(), 'f'))
-
-      colorRaw = []
-      for (_, _, z) in self.dataPlane.toVBO():
-        colorRaw += [self.heightToColor(z)]
-
-      self.colorVBO = vbo.VBO(numpy.array(colorRaw, 'f'))
+      self.colorVBO = vbo.VBO(numpy.array(self.dataPlane.toColorVBO(), 'f'))
       self.update = False
  
   def drawTriMesh(self):
@@ -105,6 +93,10 @@ class Simulation(frame.Frame):
 
   def drawCar(self):
     self.physicsThread.car.drawCar()
+    (x, y, z) = self.physicsThread.car.getPos()
+    (self.eyeX, self.eyeY, self.eyeZ) = (x, y, z + 10)
+    (r, p, y) = self.physicsThread.car.getRPY()
+    self.eyeYaw = y
 
   def draw(self):
     lol = time.time()
@@ -126,6 +118,10 @@ class Simulation(frame.Frame):
     self.menu.postGL()
 
   def timerFired(self, value):
+    (_, _, z) = self.physicsThread.car.getPos()
+    if(z <= self.dataPlane.minVal):
+      self.physicsThread.makeCar()
+
     if(time.time() - self.timeFromLastUpdate >= Simulation.planeUpdateDelay):
       if(not(self.dataSource.graphicsQueue.empty())):
         self.dataPlane = self.dataSource.graphicsQueue.get()
@@ -152,15 +148,22 @@ class Simulation(frame.Frame):
           self.pauseButton.setTexture(Simulation.PAUSE_TEX)
 
   def keyboard(self, key, x, y):
-    self.eyeRoll += -(key == "d") + (key == "a")
-    self.eyePitch += -(key == "s") + (key == "w")
-    self.eyeYaw += -(key == "z")/15.0 + (key == "x")/15.0
-    if(key == "p"): print self.eyeX, self.eyeY, self.eyeZ
-
-  def specialKeys(self, key, x, y):
-    self.eyeX += -(key == GLUT_KEY_DOWN)*1.5 + (key == GLUT_KEY_UP)*1.5
-    self.eyeY += (key == GLUT_KEY_LEFT)*1.5 + -(key == GLUT_KEY_RIGHT)*1.5
-    self.eyeZ += -(key == GLUT_KEY_PAGE_DOWN)*1.5 +(key == GLUT_KEY_PAGE_UP)*1.5
+    if(key == "w"):
+      self.physicsThread.car.accelerate(car.Car.acc)
+    elif(key == "s"):
+      self.physicsThread.car.accelerate(-car.Car.acc)
+    elif(key == "a"):
+      self.physicsThread.car.setFrontWheelTurn(-.25)
+    elif(key == "d"):
+      self.physicsThread.car.setFrontWheelTurn(.25)
+    elif(key == " "):
+      self.physicsThread.car.setWheelSpeed(0)
+      self.physicsThread.car.setFrontWheelTurn(0)
+      self.physicsThread.car.resetPos()
+    elif(key == "r"):
+      self.physicsThread.car.setWheelSpeed(0)
+      self.physicsThread.car.setFrontWheelTurn(0)
+      self.physicsThread.makeCar()
 
   def pause(self, state = True):
     self.paused = state
@@ -175,7 +178,7 @@ class Simulation(frame.Frame):
     except: pass
 
   def setup(self, dataSource):
-    self.dataSource = converter.Converter(dataSource)
+    self.dataSource = converter.Converter(dataSource, self.dispRef.mapDir)
     self.dataSource.start()
 
     while(self.dataSource.graphicsQueue.empty()): pass
@@ -187,10 +190,12 @@ class Simulation(frame.Frame):
       self.dataPlane = self.dataSource.graphicsQueue.get()
     else:
       self.planePresent = False
+    if(isinstance(dataSource, sources.CSVSource)): pass
+    self.dataSource.terminate()
 
-    self.eyeX = -1.5 * self.dataPlane.width
+    self.eyeX = -self.dataPlane.width/2.0
     self.eyeY = 0
-    self.eyeZ = self.dataPlane.minVal + 10
+    self.eyeZ = self.dataPlane.maxVal + 10
     self.eyeRoll = self.eyePitch = self.eyeYaw = 0
     
     self.setuped = True

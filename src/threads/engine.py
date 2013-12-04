@@ -21,10 +21,10 @@ class Engine(threading.Thread):
     (world, contactGroup) = args
   
     for contact in contacts:
-      contact.setBounce(0.2)
+      contact.setBounce(0.1)
   
       # Friction
-      contact.setMu(5000)
+      contact.setMu(10)
   
       # Create a joint between them to repel
       joint = ode.ContactJoint(world, contactGroup, contact)
@@ -32,11 +32,15 @@ class Engine(threading.Thread):
   
   def buildTrimesh(self):
     meshData = ode.TriMeshData()
-    meshData.build(self.dataPlane.toVBO(),
-                     self.dataPlane.toODETrimeshIndexes())
+    meshData.build(self.dataPlane.toRawVertices(),
+                     self.dataPlane.toTriangleIndexes())
     self.ground = ode.GeomTriMesh(meshData, self.collisionSpace)
     self.ground.setPosition((-self.dataPlane.width / 2.0, 
                              -self.dataPlane.height / 2.0, 0))
+
+  def makeCar(self):
+    self.car.createCar(0,0,self.dataPlane.getPoint(self.dataPlane.width/2, 
+      self.dataPlane.height/2).z + 10)
 
   def initODE(self):
     self.world = ode.World()
@@ -49,6 +53,7 @@ class Engine(threading.Thread):
   
     self.contacts = ode.JointGroup() 
     self.car = car.Car(self.world, self.collisionSpace)
+    self.makeCar()
 
   def update(self):
     newData = self.getDepthData()
@@ -88,6 +93,8 @@ class Engine(threading.Thread):
 
     while(not(self.exit)):
       if(not(self.paused)):
+        self.car.simulate()
+
         self.collisionSpace.collide((self.world, self.contacts),
                                       self.near_callback)
         self.world.step(simTimeStep)
