@@ -8,6 +8,7 @@ import os
 from src.threads.frames import frame
 from src.threads.resources import shapes, buttons, menu, text
 from src.threads import sources
+from src.tools import client
 
 class MainMenu(frame.Frame):
   delay = (1.0/24.0)
@@ -31,7 +32,7 @@ class MainMenu(frame.Frame):
       if(MainMenu.PLAY in self.buttonsPressed):
         self.dispRef.currentFrame = ChooseInput(self.dispRef, self.frameSize)
       elif(MainMenu.DOWNLOAD in self.buttonsPressed):
-        self.dispRef.currentFrame = DownloadMenu(self.dispRef, self.frameSize)
+        self.dispRef.currentFrame = DownloadCSV(self.dispRef, self.frameSize)
       elif(MainMenu.ABOUT in self.buttonsPressed):
         self.dispRef.currentFrame = AboutMenu(self.dispRef, self.frameSize)
 
@@ -167,22 +168,23 @@ class ChooseCSV(frame.Frame):
     numCSVs = len(self.availableCSVs)
     limit = numCSVs if(self.shown >= numCSVs) else self.shown
     for item in xrange(limit):
-      self.visible += [self.genEntry(item)]
+      self.visible += [self.genEntry(item, limit)]
 
-  def genEntry(self, num):
+  def genEntry(self, num, limit):
     boxColor = (1, 1, 1)
     textColor = (0, 0, 0)
     borderColor = (0 ,0, 0)
     rHeight, rWidth = (50, 700)
 
-    section = (float(self.frameHeight) / self.shown)
+    section = rHeight + 20
+    tHeight = section * limit - section/2.0
     path = self.availableCSVs[(num + self.start) % len(self.availableCSVs)]
     (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
 
-    return [buttons.RectangleButton(cx, num*section+section/2.0,rHeight,rWidth, 
-              (num + self.start) % len(self.availableCSVs), path),
+    return [buttons.RectangleButton(cx, cy + num*section - tHeight/2.0,
+              rHeight,rWidth,(num + self.start) % len(self.availableCSVs),path),
             text.Text(GLUT_BITMAP_9_BY_15, path, textColor, cx, 
-              num*section+section / 2.0)]
+              cy +num*section-tHeight/2.0)]
 
   def draw(self):
     self.preGL()
@@ -205,30 +207,36 @@ class ChooseCSV(frame.Frame):
                                                          self.dispRef.mapDir))
               self.dispRef.currentFrame = self.dispRef.sim
  
-      if(AboutMenu.HOME in self.buttonsPressed):
+      if(ChooseCSV.HOME in self.buttonsPressed):
         self.dispRef.currentFrame = MainMenu(self.dispRef, self.frameSize)
-
-  def keyboard(self, key, x, y):
-    self.start += 1
+      elif(ChooseCSV.UP in self.buttonsPressed):
+        self.start -= 1 if(self.start > 0) else 0
+      elif(ChooseCSV.DOWN in self.buttonsPressed):
+        self.start += 1 if(self.start+self.shown<len(self.availableCSVs)) else 0
 
   def __init__(self, dispRef, frameSize):
     super(ChooseCSV, self).__init__(dispRef, frameSize)
     offset = 30
 
     self.start = 0
-    self.shown = 10
+    self.shown = 8
     self.visible = []
     self.availableCSVs = sorted(os.listdir(self.dispRef.mapDir))
 
     (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     objs = [shapes.Texture(cx, cy, "background.png"),
-            #buttons.TriangleButton(self.frameWidth - offset, cy - offset, 
             buttons.TexturedButton(offset, self.frameHeight - offset,
               ChooseCSV.HOME, "home.png")]
 
+    if(len(self.availableCSVs) > self.shown):
+      objs += [buttons.TriangleButton(self.frameWidth - 4*offset, cy + 4*offset,
+                ((0, 50), (-25, 0), (25, 0)), ChooseCSV.DOWN,""),
+               buttons.TriangleButton(self.frameWidth - 4*offset, cy - 5*offset,
+              ((0, -50), (-25, 0), (25, 0)), ChooseCSV.UP,"")]
+
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
 
-class DownloadMap(frame.Frame):
+class DownloadCSV(frame.Frame):
   clearColor = (.5, .5, .5, 1)
   defaultColor = (1.0, 1.0, 1.0)
 
@@ -245,28 +253,27 @@ class DownloadMap(frame.Frame):
         component.draw()
 
   def genVisible(self):
-    self.visible = self.downloadThread.genVisible()
-
-  def lol(self):
+    self.visible = []
     numCSVs = len(self.availableCSVs)
     limit = numCSVs if(self.shown >= numCSVs) else self.shown
     for item in xrange(limit):
-      self.visible += [self.genEntry(item)]
+      self.visible += [self.genEntry(item, limit)]
 
-  def genEntry(self, num):
+  def genEntry(self, num, limit):
     boxColor = (1, 1, 1)
     textColor = (0, 0, 0)
     borderColor = (0 ,0, 0)
     rHeight, rWidth = (50, 700)
 
-    section = (float(self.frameHeight) / self.shown)
+    section = rHeight + 20
+    tHeight = section * limit - section/2.0
     path = self.availableCSVs[(num + self.start) % len(self.availableCSVs)]
     (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
 
-    return [buttons.RectangleButton(cx, num*section+section/2.0,rHeight,rWidth, 
-              (num + self.start) % len(self.availableCSVs), path),
+    return [buttons.RectangleButton(cx, cy + num*section - tHeight/2.0,
+              rHeight,rWidth,(num + self.start) % len(self.availableCSVs),path),
             text.Text(GLUT_BITMAP_9_BY_15, path, textColor, cx, 
-              num*section+section / 2.0)]
+              cy +num*section-tHeight/2.0)]
 
   def draw(self):
     self.preGL()
@@ -274,7 +281,7 @@ class DownloadMap(frame.Frame):
     self.menu.draw()
     self.drawDynamic()
     self.menu.postGL()
-    time.sleep(ChooseCSV.delay)
+    time.sleep(DownloadCSV.delay)
 
   def mouse(self, mouseButton, buttonState, x, y):
     if(buttonState == GLUT_DOWN):
@@ -285,33 +292,37 @@ class DownloadMap(frame.Frame):
         for component in item:  
           if(isinstance(component, buttons.Button)):
             if(component.registerEvent(mouseButton, buttonState, x, y)):
+              self.client.recv(component.text)
               self.dispRef.sim.setup(sources.CSVSource(component.text, 
                                                          self.dispRef.mapDir))
               self.dispRef.currentFrame = self.dispRef.sim
  
-      if(AboutMenu.HOME in self.buttonsPressed):
+      if(DownloadCSV.HOME in self.buttonsPressed):
         self.dispRef.currentFrame = MainMenu(self.dispRef, self.frameSize)
-
-  def keyboard(self, key, x, y):
-    self.start += 1
+      elif(DownloadCSV.UP in self.buttonsPressed):
+        self.start -= 1 if(self.start > 0) else 0
+      elif(DownloadCSV.DOWN in self.buttonsPressed):
+        self.start += 1 if(self.start+self.shown<len(self.availableCSVs)) else 0
 
   def __init__(self, dispRef, frameSize):
-    super(ChooseCSV, self).__init__(dispRef, frameSize)
+    super(DownloadCSV, self).__init__(dispRef, frameSize)
     offset = 30
 
     self.start = 0
-    self.shown = 10
+    self.shown = 8
     self.visible = []
-    self.availableCSVs = sorted(os.listdir(self.dispRef.mapDir))
+    self.client = client.Client(self.dispRef.mapDir, self.dispRef.imageDir)
+    self.availableCSVs = self.client.getList("sorted")
 
     (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     objs = [shapes.Texture(cx, cy, "background.png"),
-            #buttons.TriangleButton(self.frameWidth - offset, cy - offset, 
-            buttons.TexturedButton(offset,self.frameHeight - offset,
-              ChooseCSV.HOME, "home.png")]
+            buttons.TexturedButton(offset, self.frameHeight - offset,
+              DownloadCSV.HOME, "home.png")]
+
+    if(len(self.availableCSVs) > self.shown):
+      objs += [buttons.TriangleButton(self.frameWidth - 4*offset, cy + 4*offset,
+                ((0, 50), (-25, 0), (25, 0)), DownloadCSV.DOWN,""),
+               buttons.TriangleButton(self.frameWidth - 4*offset, cy - 5*offset,
+              ((0, -50), (-25, 0), (25, 0)), DownloadCSV.UP,"")]
 
     self.menu = menu.Menu(self.dispRef, self.frameSize, objs)
-    self.downloadThread = downloadThread.Worker(self.dispRef)
-    self.downloadThread.start()
-
-

@@ -17,7 +17,7 @@ class Worker(object):
   clearColor = (1, 1, 1, 1)
 
   # Milliseconds
-  updateDelay = 42
+  updateDelay = 20
 
   def preGL(self):
     glShadeModel(GL_FLAT)
@@ -74,10 +74,12 @@ class Worker(object):
     # Blocks
     glutMainLoop()
    
-  def __init__(self, args):
-    self.mapDir = "maps"
-    self.imageDir = "images"
-    self.resourceDir = "resources"
+  def __init__(self, mapDir = "", imageDir = "", resourceDir = "", args = []):
+    self.mapDir = mapDir
+    self.imageDir = imageDir
+    self.resourceDir = resourceDir
+    self.runArgs = args
+
     self.sim = sim.Simulation(self, Worker.frameSize, self.mapDir)
     self.currentFrame = menus.MainMenu(self, Worker.frameSize)
 

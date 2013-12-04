@@ -160,15 +160,7 @@ class PlaneData(object):
     return triangles
 
   def toODETrimeshIndexes(self):
-    self.vbo = self.toVBO()
-    points = range(len(self.vbo))
-
-    result = []
-    while(points != []):
-      result += [tuple(points[:3])]
-      points = points[3:]
-
-    return result
+    pass
 
   def toVBO(self):
     if(self.vbo is not None):
@@ -187,6 +179,24 @@ class PlaneData(object):
     self.vbo = flattenedAndConverted
     return flattenedAndConverted
 
+  def heightToColor(self, val):
+    valRange = self.maxVal - self.minVal
+    valScale = 1.0
+    if(valRange == 0): return [0.5 * valScale]*3
+
+    return [(float(val - self.minVal) / valRange) * valScale] * 3
+
+  def toColorVBO(self):
+    if(self.colorVBO is not None):
+      return self.colorVBO
+
+    colorRaw = []
+    for (_, _, z) in self.toVBO():
+      colorRaw += [self.heightToColor(z)]
+
+    self.colorVBO = colorRaw
+    return colorRaw
+
   def __init__(self, depthData, name = ""):
     self.rawData = depthData
     self.name = name
@@ -199,6 +209,7 @@ class PlaneData(object):
     self.triangles = None
     self.triangleIndexes = None
     self.vbo = None
+    self.colorVBO = None
 
   def __repr__(self):
     name = "self.name='%s'" % self.name
