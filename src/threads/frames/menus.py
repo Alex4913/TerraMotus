@@ -5,7 +5,7 @@ from OpenGL.GLUT import *
 import time
 import os
 
-from src.threads.frames import frame
+from src.threads.frames import frame, loading
 from src.threads.resources import shapes, buttons, menu, text
 from src.threads import sources
 from src.tools import client
@@ -203,9 +203,10 @@ class ChooseCSV(frame.Frame):
         for component in item:  
           if(isinstance(component, buttons.Button)):
             if(component.registerEvent(mouseButton, buttonState, x, y)):
-              self.dispRef.sim.setup(sources.CSVSource(component.text, 
-                                                         self.dispRef.mapDir))
-              self.dispRef.currentFrame = self.dispRef.sim
+              func = self.dispRef.sim.setup 
+              self.dispRef.currentFrame = loading.Loading(self.dispRef,
+                self.frameSize, self.dispRef.sim, func, 
+                [sources.CSVSource(component.text, self.dispRef.mapDir)])
  
       if(ChooseCSV.HOME in self.buttonsPressed):
         self.dispRef.currentFrame = MainMenu(self.dispRef, self.frameSize)
