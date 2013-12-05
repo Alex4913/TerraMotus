@@ -6,12 +6,15 @@ realm of computer simulation. The aim is to give the user a unique experience,
 in that they can terraform a simulated world in real-time using a physical,
 malleable input device: a sandbox read by a Microsoft Kinect.
 
+[Video](https://www.youtube.com/watch?v=ej2qqN2Gdxg)
+
 ## Project Requirements
 This project uses Python 2.7.3 with a few external dependencies:
 * [libfreenect](https://github.com/OpenKinect/libfreenect)
 * [PyOpenGL 3.x](http://pyopengl.sourceforge.net/)
 * [PyODE 1.2.x](http://pyode.sourceforge.net/)
 * [NumPy](http://www.numpy.org/)
+* [requests](http://www.python-requests.org)
 
 ## The Meat
 This program melds a physics engine with real-time depth data collected by a
@@ -83,22 +86,16 @@ It follows this example:
 However, this leaves gaps in the drawing, but it significantly reduces the
 number of triangles drawn.
 
-__Grouping Near-Parallel Planes__
-Now comes the real improvement! This method involves approaching the problem
-from an applied, Multi-Variable Calculus route. Instead of drawing individual
-triangles, many of whom have neighboring triangles that are near-parallel,
-rather, it is efficient to draw groups of near-parallel triangles as a single 
-plane.
+__VBO's__
 
-For this, we define near-parallel planes as having normal vectors within a
-certain error of angle, a radix. As we increase that error, the more fidelity
-in the terrain is lost.
+Now comes the real improvement! Using OpenGL, I was able to use Vertex Buffered
+Objects and send them to the graphics card for incredible speed improvements.
+This howver is a tradeoff for space as I now have to generate the very large 
+and memory intensive arrays required to index and display the mesh of data.
 
-This algorithm first finds triangles with similar normal vectors, ensuring that
-they are adjacent, then it finds the best way to fill that area with triangles,
-minimizing the number drawn. An example shown below:
+And, so even after the search for a better triangle patterm, I still ended up with this:
 
-![Efficiency!](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-big.png?raw=true)
+![Efficiency!](https://github.com/Alex4913/TerraMotus/blob/master/media/images/tri-boxes.png?raw=true)
 
 For a grid of size 100 x 100, here are the comparative triangle totals:
 
@@ -108,4 +105,4 @@ For a grid of size 100 x 100, here are the comparative triangle totals:
 | Triangle Strips          |               5,200 |
 | Sampling (step = 2)      |               4,902 |
 | Interpolation (step = 2) |               4,902 |
-| Near-Parallel Grouping   |                 > 1 |
+| VBOs                     |              19,602 |
