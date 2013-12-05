@@ -8,8 +8,9 @@ import time
 import math
 
 from src.threads.resources import car, buttons, menu
-from src.threads.frames import frame, menus
+from src.threads.frames import frame, menus, loading
 from src.threads import converter, sources, uploadThread, engine
+from src.tools import client
 
 class Simulation(frame.Frame):
   # World Properties
@@ -25,6 +26,7 @@ class Simulation(frame.Frame):
   HOME = 1
   UPLOAD = 2
   PAUSE = 3
+  RELOAD = 4
   PAUSE_TEX = "pause.png"
   UNPAUSE_TEX = "unpause.png"
 
@@ -42,12 +44,12 @@ class Simulation(frame.Frame):
     gluPerspective(60, 1.5, 0.2, 1000)
     glMatrixMode(GL_MODELVIEW)
     self.setCamera(self.eyeX, self.eyeY, self.eyeZ,
-                   self.eyeRoll, self.eyePitch, self.eyeYaw, 30)
+                   self.eyeRoll, self.eyePitch, self.eyeYaw, 40)
 
   def setCamera(self, x, y, z, roll, pitch, yaw, r = 1):
     # Unit Circle
-    lookX = -r*math.cos(yaw) + x
-    lookY = -r*math.sin(yaw) + y
+    lookX = -r*math.cos(yaw + self.extraYaw) + x
+    lookY = -r*math.sin(yaw + self.extraYaw) + y
 
     gluLookAt (lookX, lookY, z, x, y, z, 0, 0, 1)
     glRotatef(roll, 1.0, 0, 0)
@@ -139,6 +141,11 @@ class Simulation(frame.Frame):
       if(Simulation.HOME in self.buttonsPressed):
         self.pause(True)
         self.dispRef.currentFrame = menus.MainMenu(self.dispRef, self.frameSize)
+#      if(Simulation.RELOAD in self.buttonsPressed):
+#        func = self.setup 
+#        self.dispRef.currentFrame = loading.Loading(self.dispRef,
+#          self.frameSize, self.dispRef.sim, func, 
+#          [self.source])
       if(Simulation.UPLOAD in self.buttonsPressed):
         if(not(self.upload)):
           self.upload = True
@@ -158,6 +165,11 @@ class Simulation(frame.Frame):
       self.physicsThread.car.setFrontWheelTurn(-self.turnInc)
     elif(key == "d"):
       self.physicsThread.car.setFrontWheelTurn(self.turnInc)
+    elif(key == "z"):
+      self.extraYaw += self.userSpinInc
+    elif(key == "x"):
+      self.extraYaw -= self.userSpinInc
+
     elif(key == " "):
       self.physicsThread.car.setWheelSpeed(0)
       self.physicsThread.car.setFrontWheelTurn(0)
@@ -180,6 +192,7 @@ class Simulation(frame.Frame):
     except: pass
 
   def setup(self, dataSource):
+    self.source = dataSource
     self.dataSource = converter.Converter(dataSource, self.dispRef.mapDir)
     self.dataSource.start()
 
@@ -197,8 +210,13 @@ class Simulation(frame.Frame):
 
     self.turnInc = .1
     self.eyeX=self.eyeY=self.eyeZ=self.eyeRoll=self.eyePitch=self.eyeYaw=0
+    self.extraYaw = 0
+    self.userSpinInc = 2*math.pi/20
     self.setuped = True
     self.update = True
+    self.physicsThread.car.setWheelSpeed(0)
+    self.physicsThread.car.setFrontWheelTurn(0)
+    self.physicsThread.makeCar()
     self.timeFromLastUpdate = time.time()
     self.pause(False)
 
@@ -218,13 +236,19 @@ class Simulation(frame.Frame):
     offset = 30
     self.homeButton = buttons.TexturedButton(offset, self.frameHeight - offset, 
                                                Simulation.HOME, "home.png")
-    self.uploadButton = buttons.TexturedButton(picWidth + offset, 
-                                               self.frameHeight - offset,
-                                               Simulation.UPLOAD, "upload3.png")
-    self.pauseButton = buttons.TexturedButton(2*picWidth + offset,
+    self.pauseButton = buttons.TexturedButton(picWidth + offset,
                                                self.frameHeight - offset,
                                                Simulation.PAUSE, 
                                                Simulation.PAUSE_TEX)
-    self.menu = menu.Menu(self.dispRef, self.frameSize, 
-                          [self.homeButton,self.uploadButton,self.pauseButton])
+    self.reloadButton = buttons.TexturedButton(2*picWidth + offset, 
+                                               self.frameHeight - offset,
+                                               Simulation.RELOAD, "reload.png")
+    self.uploadButton = buttons.TexturedButton(2*picWidth + offset, 
+                                               self.frameHeight - offset,
+                                               Simulation.UPLOAD, "upload3.png")
+    btns = [self.homeButton, self.pauseButton] #, self.reloadButton]
+
+    if(client.Client(self.dispRef.mapDir, self.dispRef.imageDir).ping()):
+      btns += [self.uploadButton]
+    self.menu = menu.Menu(self.dispRef, self.frameSize, btns)
     self.buttonsPressed = []

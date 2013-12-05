@@ -50,13 +50,9 @@ class Converter(multiprocessing.Process):
         continue
 
       if(isinstance(self.dataThread, sources.KinectSource)):
-        print "Errors"
         dataPlane = errors.averageErrors(dataPlane, Converter.errorVal)
-        print "Flip"
         dataPlane = filters.flipSurface(dataPlane)
-      print "Average"
-      dataPlane = filters.averagePass(dataPlane, 2)
-      print "Done"
+      dataPlane = filters.averagePass(dataPlane, 5)
 
       if(not(self.physicsQueue.full())): self.physicsQueue.put(dataPlane)
       if(not(self.graphicsQueue.full())): self.graphicsQueue.put(dataPlane)

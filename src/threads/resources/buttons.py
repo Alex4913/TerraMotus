@@ -118,7 +118,7 @@ class TexturedButton(RectangleButton):
     self.x = x
     self.y = y
     self.texturePath = texturePath
-    self.borderColor = None #(0, 0, 0)
+    self.borderColor = None
     self.borderWidth = 2
 
     self.setTexture(texturePath)
@@ -129,6 +129,7 @@ class TexturedButton(RectangleButton):
     self.texture.draw()
 
   def setTexture(self, path):
+    self.borderColor = None
     self.texture = shapes.Texture(self.x, self.y, path, 0, self.borderColor,
                                     self.borderWidth)
     self.height = self.texture.height

@@ -41,10 +41,18 @@ class MainMenu(frame.Frame):
     self.clearColor = (.5, .5, .5, 1)
     self.defaultColor = (1.0, 1.0, 1.0)
 
+    #if(not(client.Client(self.
     (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
     dx = 110
     dy = 75
-    objs  = [shapes.Texture(cx, cy, "background.png"),
+    if(not(client.Client(self.dispRef.mapDir, self.dispRef.imageDir).ping())):
+      dx = 65
+      objs = [shapes.Texture(cx, cy, "background.png"),
+             buttons.TexturedButton(cx - dx, cy + dy, MainMenu.PLAY,"play.png"),
+             buttons.TexturedButton(cx + dx,cy + dy,MainMenu.ABOUT,"about.png"),
+             buttons.TexturedButton(cx, cy - dy, MainMenu.LOGO, "logo.png")]
+    else:
+      objs = [shapes.Texture(cx, cy, "background.png"),
              buttons.TexturedButton(cx - dx, cy + dy, MainMenu.PLAY,"play.png"),
              buttons.TexturedButton(cx,cy+dy,MainMenu.DOWNLOAD,"download.png"),
              buttons.TexturedButton(cx + dx,cy + dy,MainMenu.ABOUT,"about.png"),
@@ -74,8 +82,10 @@ class ChooseInput(frame.Frame):
       self.buttonsPressed = map(lambda x : x.ref, self.menu.buttonEvents)
       
       if(ChooseInput.KINECT in self.buttonsPressed):
-          self.dispRef.sim.setup(sources.KinectSource())
-          self.dispRef.currentFrame = self.dispRef.sim
+        func = self.dispRef.sim.setup 
+        self.dispRef.currentFrame = loading.Loading(self.dispRef,
+          self.frameSize, self.dispRef.sim, func, 
+          [sources.KinectSource()])
       elif(ChooseInput.CSV in self.buttonsPressed):
         self.dispRef.currentFrame = ChooseCSV(self.dispRef, self.frameSize)
       elif(ChooseInput.RESUME in self.buttonsPressed):
@@ -284,6 +294,11 @@ class DownloadCSV(frame.Frame):
     self.menu.postGL()
     time.sleep(DownloadCSV.delay)
 
+  def getAndSetup(self, path):
+    self.client.recv(path)
+    self.dispRef.sim.setup(sources.CSVSource(path, 
+                                             self.dispRef.mapDir))
+
   def mouse(self, mouseButton, buttonState, x, y):
     if(buttonState == GLUT_DOWN):
       self.menu.mouse(mouseButton, buttonState, x, y)
@@ -293,10 +308,10 @@ class DownloadCSV(frame.Frame):
         for component in item:  
           if(isinstance(component, buttons.Button)):
             if(component.registerEvent(mouseButton, buttonState, x, y)):
-              self.client.recv(component.text)
-              self.dispRef.sim.setup(sources.CSVSource(component.text, 
-                                                         self.dispRef.mapDir))
-              self.dispRef.currentFrame = self.dispRef.sim
+              func = self.getAndSetup
+              self.dispRef.currentFrame = loading.Loading(self.dispRef,
+                self.frameSize, self.dispRef.sim, func, 
+                [component.text])
  
       if(DownloadCSV.HOME in self.buttonsPressed):
         self.dispRef.currentFrame = MainMenu(self.dispRef, self.frameSize)

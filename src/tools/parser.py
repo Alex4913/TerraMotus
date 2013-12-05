@@ -1,4 +1,3 @@
-import csv
 import copy
 
 def stringArrayToFloat(array):
@@ -15,11 +14,9 @@ def stringArrayToFloat(array):
 def parse(planeName):
   """ Open a data CSV and return a 2D list of floats """
   f = open(planeName, 'r')
-  reader = csv.reader(f, delimiter=',')
-
   data = []
-  for row in reader:
-    data += [row]
+  for line in f:
+    data += [line.split(',')] 
 
   f.close()
   return stringArrayToFloat(data)

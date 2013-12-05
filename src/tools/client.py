@@ -7,6 +7,13 @@ class Client(object):
     self.mapDir = mapDir
     self.imageDir = imageDir
 
+  def ping(self):
+    try:
+      r = requests.get(Client.url)
+      return True
+    except:
+      return False
+
   def send(self, name):
     path = self.mapDir + "/" if(self.mapDir) else ""
     path += name

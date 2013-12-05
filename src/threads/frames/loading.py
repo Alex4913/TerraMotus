@@ -22,6 +22,7 @@ class BackgroundFunction(threading.Thread):
 
 class Loading(frame.Frame):
   def preGL(self):
+    super(Loading, self).preGL()
     glDisable(GL_DEPTH_TEST)
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
@@ -39,13 +40,11 @@ class Loading(frame.Frame):
     glMatrixMode(GL_MODELVIEW)
 
   def animateDots(self):
-    scale = 100
-    self.animationCount %= scale
+    self.animationCount %= self.dots
 
     self.dotState = [(0, 0, 0)] * (self.dots)
-    for index in xrange(self.animationCount / (scale/(self.dots + 1))):
-      if(index < self.dots):
-        self.dotState[index] = (1, 1, 1)
+    for index in xrange(self.animationCount):
+      self.dotState[index] = (1, 1, 1)
 
   def drawDots(self):
     (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
@@ -70,12 +69,14 @@ class Loading(frame.Frame):
 
   def draw(self):
     self.preGL()
+    self.backgroundTex.draw()
+    self.animateDots()
     self.drawSpinning()
     self.drawDots()
     self.postGL()
 
   def timerFired(self, count):
-    self.spin += 1
+    self.spin += 10
     self.animationCount += 1
     if(self.backgroundTask.done):
       self.dispRef.currentFrame = self.nextFrame
@@ -86,6 +87,8 @@ class Loading(frame.Frame):
     self.nextFrame = nextFrame
     self.backgroundTask = BackgroundFunction(backgroundFunc, args)
 
+    (cx, cy) = (self.frameWidth / 2.0, self.frameHeight / 2.0)
+    self.backgroundTex = shapes.Texture(cx, cy, "background.png")
     self.spin = 0
     self.dots = 5
     self.dotState = [(0, 0, 0)] * (self.dots)

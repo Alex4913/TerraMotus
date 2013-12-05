@@ -15,22 +15,22 @@ class Car(object):
     self.collisionSpace = collisionSpace
     self.jointGroup = 0
 
-    self.wheelRadius = 1.25
+    self.wheelRadius = 3
     self.wheelHeight = 0.65
-    self.bodyMass = 5
-    self.wheelMass = 0.1
+    self.bodyMass = 15
+    self.wheelMass = 1
     self.deceleration = 0.01
 
     self.wheelSpeed = 0
     self.wheelTurn = 0
-    self.steerRange = .75
+    self.steerRange = .42
     
     self.maxForce = 100
-    self.speedCutOff = 100
+    self.speedCutOff = 10000
     self.rescueOffset = 5
 
     #                      l, w, h
-    self.bodyDimensions = (5.0, 4.0, 3.0)
+    self.bodyDimensions = (12, 6, 6)
 
     self.wheelColor = (0, 0, .5)
     self.carBodyColor = (.5, 0, 0)
@@ -110,11 +110,11 @@ class Car(object):
 
   def createCar(self, cx = 0, cy = 0, cz = 5):
     (l, w, h) = self.bodyDimensions
-    (hl, hw, hh) = (1.3*l/2.0, w/2.0, h/2.0)
+    (hl, hw, hh) = (l/2.0, 1.3*w/2.0, h/2.0)
 
-    self.wheels = [self.createWheel(cx + 2*hw, cy + hl, cz - hh, True),
+    self.wheels = [self.createWheel(cx + hw, cy + hl, cz - hh, True),
                    self.createWheel(cx - hw, cy + hl, cz - hh, False),
-                   self.createWheel(cx + 2*hw, cy - hl, cz - hh, True),
+                   self.createWheel(cx + hw, cy - hl, cz - hh, True),
                    self.createWheel(cx - hw, cy - hl, cz - hh, False)]
 
     self.carBody = self.createBody(cx, cy, cz)
@@ -152,8 +152,8 @@ class Car(object):
       if(front): self.frontJoints += [joint]
       else: self.backJoints += [joint]
 
-    suspensionERP = 2
-    suspensionCFM = 0.8
+    suspensionERP = 5
+    suspensionCFM = 0.2
 
     for joint in xrange(len(self.frontJoints)):
       self.frontJoints[joint].setParam(ode.ParamSuspensionERP, suspensionERP)
@@ -180,13 +180,17 @@ class Car(object):
       self.frontJoints[joint].setParam(ode.ParamFudgeFactor, 0.1)
 
   def motor(self):
-    for jointGroup in [self.frontJoints]:#, self.backJoints]:
+    for jointGroup in [self.frontJoints, self.backJoints]:
       for joint in xrange(len(jointGroup)):
         jointGroup[joint].setParam(ode.ParamVel2, -self.wheelSpeed)
         jointGroup[joint].setParam(ode.ParamFMax2, self.maxForce) 
 
   def simulate(self):
-    self.setWheelSpeed(self.wheelSpeed - self.deceleration)
+    if(self.wheelSpeed > 0):
+      self.setWheelSpeed(self.wheelSpeed - self.deceleration)
+    elif(self.wheelSpeed < 0):
+      self.setWheelSpeed(self.wheelSpeed + self.deceleration)
+
     self.motor()
     self.steer()
 
@@ -216,7 +220,7 @@ class Car(object):
 
   def setWheelSpeed(self, speed):
     self.wheelSpeed = min(self.speedCutOff, speed)
-    self.wheelSpeed = max(0, self.wheelSpeed)
+    self.wheelSpeed = max(-self.speedCutOff, self.wheelSpeed)
 
   def accelerate(self, acc):
     self.setWheelSpeed(self.wheelSpeed + acc)

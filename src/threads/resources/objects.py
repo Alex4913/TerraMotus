@@ -35,7 +35,7 @@ class Object(object):
 
 class Box(Object):
   def __init__(self, (x, y, z), (lx, ly, lz), rotation, color, 
-                 borderColor = None, borderWidth = 5):
+                 borderColor = (0,0,0), borderWidth = 5):
     super(Box, self).__init__(x, y, z, color)
     self.lx = lx
     self.ly = ly
@@ -116,13 +116,13 @@ class Box(Object):
     glPopMatrix()
 
 class Cylinder(Object):
-  def __init__(self, (x, y, z), r, h, rotation, color, borderColor = None, 
+  def __init__(self, (x, y, z), r, h, rotation, color, borderColor = (0,0,0),
                  borderWidth = 5, fidelity = None):
     super(Cylinder, self).__init__(x, y, z, color)
     self.radius = r
     self.height = h
     self.rotation = rotation
-    self.borderColor = (0, 0, 0)#None
+    self.borderColor = borderColor
     self.borderWidth = borderWidth
 
     if(fidelity is None):
