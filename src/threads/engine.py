@@ -24,7 +24,7 @@ class Engine(threading.Thread):
       contact.setBounce(0.1)
   
       # Friction
-      contact.setMu(100)
+      contact.setMu(250)
   
       # Create a joint between them to repel
       joint = ode.ContactJoint(world, contactGroup, contact)

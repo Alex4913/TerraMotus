@@ -52,11 +52,11 @@ class Converter(multiprocessing.Process):
       if(isinstance(self.dataThread, sources.KinectSource)):
         dataPlane = errors.averageErrors(dataPlane, Converter.errorVal)
         dataPlane = filters.flipSurface(dataPlane)
+        self.export(dataPlane)
       dataPlane = filters.averagePass(dataPlane, 5)
 
       if(not(self.physicsQueue.full())): self.physicsQueue.put(dataPlane)
       if(not(self.graphicsQueue.full())): self.graphicsQueue.put(dataPlane)
-      self.export(dataPlane)
       self.stop()
 
   def getReady(self):

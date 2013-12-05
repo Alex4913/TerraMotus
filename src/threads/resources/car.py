@@ -18,7 +18,7 @@ class Car(object):
     self.wheelRadius = 3
     self.wheelHeight = 0.65
     self.bodyMass = 15
-    self.wheelMass = 1
+    self.wheelMass = 3
     self.deceleration = 0.01
 
     self.wheelSpeed = 0
@@ -27,7 +27,7 @@ class Car(object):
     
     self.maxForce = 100
     self.speedCutOff = 10000
-    self.rescueOffset = 5
+    self.rescueOffset = 10
 
     #                      l, w, h
     self.bodyDimensions = (12, 6, 6)
