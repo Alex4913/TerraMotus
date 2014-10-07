@@ -6,7 +6,7 @@ realm of computer simulation. The aim is to give the user a unique experience,
 in that they can terraform a simulated world in real-time using a physical,
 malleable input device: a sandbox read by a Microsoft Kinect.
 
-[Video](https://www.youtube.com/watch?v=ej2qqN2Gdxg)
+[Video](https://www.youtube.com/watch?v=bAR9YmqH4-s)
 
 ## Project Requirements
 This project uses Python 2.7.3 with a few external dependencies:
