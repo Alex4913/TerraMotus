@@ -1,6 +1,9 @@
 # Ignore data CSV's
 *.csv
 
+# Ignore Log files
+*.log
+
 *.py[cod]
 
 # C extensions
